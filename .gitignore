@@ -32,3 +32,5 @@ meshwork-gtk.pc
 tests/
 debian/changelog
 debian/stamp*
+bin/
+packages/
