@@ -12,6 +12,7 @@ using System;
 using Gtk;
 using Glade;
 using FileFind.Meshwork.GtkClient;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork.GtkClient
 {
@@ -127,7 +128,7 @@ namespace FileFind.Meshwork.GtkClient
 					}
 				}
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowMessageDialog (ex.Message, Dialog);
 				Dialog.Respond (ResponseType.None);
 				return;

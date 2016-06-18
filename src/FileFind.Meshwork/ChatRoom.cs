@@ -17,6 +17,7 @@ using FileFind.Meshwork;
 using FileFind.Meshwork.Protocol;
 using FileFind.Meshwork.Exceptions;
 using FileFind.Collections;
+using System.Collections.ObjectModel;
 
 namespace FileFind.Meshwork
 {
@@ -60,7 +61,7 @@ namespace FileFind.Meshwork
 			}
 		}
 
-		public IDictionary<string, Node> Users {
+		public IReadOnlyDictionary<string, Node> Users {
 			get {
 				return new ReadOnlyDictionary<string, Node>(users);
 			}

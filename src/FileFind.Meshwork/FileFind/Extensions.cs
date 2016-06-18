@@ -1,11 +1,41 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Linq.Expressions;
+using System.Reflection;
 
 namespace FileFind
 {
 	public static class Extensions
 	{
+        /*public static void Do<T>(this T obj, params Action<T>[] actions)
+        {
+            actions.ToList().ForEach(action => action(obj));
+        }
+
+        public static T SetValue<T, TValue>(this T obj, Expression<Func<T, TValue>> expression, TValue value)
+            where T : class
+        {
+            if (expression == null)
+                throw new ArgumentNullException(nameof(expression));
+
+            var memberExpression = expression.Body as MemberExpression;
+            if (memberExpression == null)
+                throw new ArgumentException("Not member access expression", nameof(expression));
+
+            var property = memberExpression.Member as PropertyInfo;
+            if (property == null)
+                throw new ArgumentException("Expression not property", nameof(expression));
+
+            var getMethod = property.GetMethod;
+            if (getMethod.IsStatic)
+                throw new ArgumentException("Static expression", nameof(expression));
+
+            property.SetValue(obj, value);
+
+            return obj;
+        }*/
+
 		public static T[] Slice<T> (this T[] source, int start)
 		{
 			return Slice(source, start, -1);

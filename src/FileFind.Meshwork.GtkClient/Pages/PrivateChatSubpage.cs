@@ -15,6 +15,7 @@ using System.Collections;
 using FileFind.Meshwork;
 using GLib;
 using MonoDevelop.Components;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork.GtkClient
 {
@@ -85,12 +86,12 @@ namespace FileFind.Meshwork.GtkClient
 			method.MessageID = message.MessageID;
 			network.AckMethods.Add (method.MessageID, method);
 		
-			LoggingService.LogDebug("Sending message...");
+			Core.LoggingService.LogDebug("Sending message...");
 		}
 
 		private void OnMessageReceived (DateTime timeReceived, object[] args)
 		{
-			LoggingService.LogDebug("Your last message was successfully delivered.");
+			Core.LoggingService.LogDebug("Your last message was successfully delivered.");
 		}
 	}
 }

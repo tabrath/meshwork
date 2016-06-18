@@ -19,6 +19,7 @@ using FileFind.Meshwork.GtkClient;
 using FileFind.Meshwork.Protocol;
 using FileFind.Meshwork.Exceptions;
 using FileFind.Meshwork.Errors;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork.GtkClient
 {
@@ -307,7 +308,7 @@ namespace FileFind.Meshwork.GtkClient
 					Gui.ShowMessageDialog ("Nothing selected");
 				}
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowErrorDialog(ex.Message);
 			}
 		}
@@ -351,7 +352,7 @@ namespace FileFind.Meshwork.GtkClient
 					}	
 				}
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowErrorDialog(ex.Message);
 			}
 		}
@@ -421,7 +422,7 @@ namespace FileFind.Meshwork.GtkClient
 				});
 				
 			} catch (Exception ex) {
-				LoggingService.LogError(ex.ToString());
+				Core.LoggingService.LogError(ex.ToString());
 				Gui.ShowErrorDialog(ex.Message);
 			}
 		}
@@ -459,7 +460,7 @@ namespace FileFind.Meshwork.GtkClient
 				filesList.QueueDraw();
 				filesList.GrabFocus();
 			} catch (Exception ex) {
-				LoggingService.LogError(ex.ToString());
+				Core.LoggingService.LogError(ex.ToString());
 				Gui.ShowErrorDialog(ex.Message);
 			}
 		}

@@ -16,6 +16,7 @@ using FileFind.Meshwork.Destination;
 
 namespace FileFind.Meshwork
 {
+    //TODO: Impl. this for di..
 	public interface ISettings
 	{
 		bool FirstRun {

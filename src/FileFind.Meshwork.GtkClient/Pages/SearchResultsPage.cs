@@ -7,6 +7,7 @@ using FileFind.Meshwork.Filesystem;
 using FileFind.Meshwork.Search;
 using FileFind.Meshwork.Protocol;
 using Gtk;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork.GtkClient 
 {
@@ -300,7 +301,7 @@ namespace FileFind.Meshwork.GtkClient
 
 			TypeSelectionChanged(typeTree, EventArgs.Empty);
 
-			search.NewResults += (NewResultsEventHandler)DispatchService.GuiDispatch(new NewResultsEventHandler(search_NewResults));
+            search.NewResults += (EventHandler<SearchResultsEventArgs>)DispatchService.GuiDispatch(new EventHandler<SearchResultsEventArgs>(search_NewResults));
 			search.ClearedResults += (EventHandler)DispatchService.GuiDispatch(new EventHandler(search_ClearedResults));
 
 			resultPopupMenu = new Menu();
@@ -340,7 +341,7 @@ namespace FileFind.Meshwork.GtkClient
 					}
 				}
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowErrorDialog(ex.Message);
 			}
 		}
@@ -356,7 +357,7 @@ namespace FileFind.Meshwork.GtkClient
 					}			
 				}					
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowErrorDialog(ex.Message);
 			}
 		}
@@ -378,7 +379,7 @@ namespace FileFind.Meshwork.GtkClient
 					}
 				}
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowErrorDialog(ex.Message);
 			}
 		}
@@ -404,9 +405,9 @@ namespace FileFind.Meshwork.GtkClient
 			}
 		}
 
-		public void search_NewResults (FileSearch sender, SearchResult[] newResults)
+        public void search_NewResults(object sender, SearchResultsEventArgs e)
 		{
-			AppendResults(newResults);
+            AppendResults(e.Results);
 
 			RecountTypes();
 			Gui.MainWindow.RefreshCounts();
@@ -417,12 +418,10 @@ namespace FileFind.Meshwork.GtkClient
 			resultsStore.Clear();
 		}
 
-		private void AppendResults (SearchResult[] results)
+		private void AppendResults(IEnumerable<SearchResult> results)
 		{
-			// XXX: This won't group same files from multiple nodes!
-			foreach (SearchResult result in results) {
-				resultsStore.AppendValues(result);
-			}
+            // XXX: This won't group same files from multiple nodes!
+            resultsStore.AppendValues(results);
 		}
 
 		public bool UrgencyHint {
@@ -736,7 +735,7 @@ namespace FileFind.Meshwork.GtkClient
 					}
 				}
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowErrorDialog(ex.Message);
 			}
 		}

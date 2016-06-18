@@ -12,6 +12,7 @@ using Gtk;
 using Gdk;
 using FileFind.Meshwork;
 using FileFind.Meshwork.FileTransfer;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork.GtkClient
 {
@@ -84,13 +85,13 @@ namespace FileFind.Meshwork.GtkClient
 				*/
 
 			Core.FileTransferManager.NewFileTransfer +=
-				(FileTransferEventHandler)DispatchService.GuiDispatch(
-					new FileTransferEventHandler(manager_NewFileTransfer)
+                    (EventHandler<FileTransferEventArgs>)DispatchService.GuiDispatch(
+					new EventHandler<FileTransferEventArgs>(manager_NewFileTransfer)
 				);
 
 			Core.FileTransferManager.FileTransferRemoved +=
-				(FileTransferEventHandler)DispatchService.GuiDispatch(
-					new FileTransferEventHandler(manager_FileTransferRemoved)
+				(EventHandler<FileTransferEventArgs>)DispatchService.GuiDispatch(
+					new EventHandler<FileTransferEventArgs>(manager_FileTransferRemoved)
 				);
 		}
 
@@ -227,30 +228,30 @@ namespace FileFind.Meshwork.GtkClient
 			}
 		}
 
-		private void manager_NewFileTransfer(IFileTransfer transfer)
+        private void manager_NewFileTransfer(object sender, FileTransferEventArgs e)
 		{
 			try {
 				// Add transfer to list
-				transferListStore.AppendValues(transfer);
+				transferListStore.AppendValues(e.Transfer);
 
 				// Watch a few other events
-				transfer.PeerAdded += (FileTransferPeerEventHandler)DispatchService.GuiDispatch(
-					new FileTransferPeerEventHandler(transfer_PeerAdded)
+				e.Transfer.PeerAdded += (EventHandler<FileTransferPeerEventArgs>)DispatchService.GuiDispatch(
+					new EventHandler<FileTransferPeerEventArgs>(transfer_PeerAdded)
 				);
 
-				transfer.Error += (FileTransferErrorEventHandler)DispatchService.GuiDispatch(
-					new FileTransferErrorEventHandler(transfer_Error)
+				e.Transfer.Error += (EventHandler<ErrorEventArgs>)DispatchService.GuiDispatch(
+					new EventHandler<ErrorEventArgs>(transfer_Error)
 				);
 
 				Gui.MainWindow.RefreshCounts();
 
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowErrorDialog(ex.ToString(), Gui.MainWindow.Window);
 			}
 		}
 
-		private void manager_FileTransferRemoved(IFileTransfer transfer)
+		private void manager_FileTransferRemoved(object sender, FileTransferEventArgs e)
 		{
 			try {
 				// Remove transfer from list
@@ -259,7 +260,7 @@ namespace FileFind.Meshwork.GtkClient
 				if (transferListStore.IterIsValid(iter)) {
 					do {
 						IFileTransfer currentItem = (IFileTransfer)transferListStore.GetValue (iter, 0);
-						if (currentItem == transfer) {
+						if (currentItem == e.Transfer) {
 							transferListStore.Remove (ref iter);
 							return;
 						}
@@ -269,21 +270,19 @@ namespace FileFind.Meshwork.GtkClient
 				Gui.MainWindow.RefreshCounts();
 
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowErrorDialog(ex.ToString(), Gui.MainWindow.Window);
 			}
 		}
 
-		// FIXME: Nothing calls this!
-		private void transfer_PeerAdded(IFileTransfer transfer, IFileTransferPeer peer)
+        private void transfer_PeerAdded(object sender, FileTransferPeerEventArgs e)
 		{
-			LoggingService.LogDebug("New Transfer Peer ({0}): {1}", transfer.File.Name, peer.Node);
+            Core.LoggingService.LogDebug("New Transfer Peer ({0}): {1}", ((IFileTransfer)sender).File.Name, e.Peer.Node);
 		}
 
-		// FIXME: Nothing calls this!
-		private void transfer_Error(IFileTransfer transfer, Exception ex)
+        private void transfer_Error(object sender, ErrorEventArgs e)
 		{
-			LoggingService.LogError(String.Format("Transfer error ({0})", transfer.File.Name), ex);
+            Core.LoggingService.LogError(String.Format("Transfer error ({0})", ((IFileTransfer)sender).File.Name), e.Exception);
 		}
 	}
 }

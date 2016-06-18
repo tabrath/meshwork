@@ -26,6 +26,7 @@ using FileFind.Meshwork.Filesystem;
 using FileFind.Meshwork.Exceptions;
 using FileFind.Meshwork.Protocol;
 using FileFind.Meshwork.Errors;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork.GtkClient
 {
@@ -61,7 +62,7 @@ namespace FileFind.Meshwork.GtkClient
 				map.NodeDoubleClicked += map_NodeDoubleClicked;
 				mapWidget = map;
 			} catch (Exception ex) {
-				LoggingService.LogError("Failed to load map !!!", ex);
+				Core.LoggingService.LogError("Failed to load map !!!", ex);
 				mapWidget = new Label("Error loading map.");
 			}
 
@@ -95,8 +96,8 @@ namespace FileFind.Meshwork.GtkClient
 			}
 
 			Core.TransportManager.TransportError +=
-				(TransportErrorEventHandler)DispatchService.GuiDispatch(
-					new TransportErrorEventHandler(Core_TransportError)
+                    (EventHandler<ErrorEventArgs>)DispatchService.GuiDispatch(
+					new EventHandler<ErrorEventArgs>(Core_TransportError)
 				);
 
 			Core.NetworkAdded +=
@@ -167,7 +168,7 @@ namespace FileFind.Meshwork.GtkClient
 			}
 		}
 
-		private void Core_TransportError (ITransport transport, Exception ex)
+        private void Core_TransportError(object sender, ErrorEventArgs args)
 		{
 			// FIXME: Do anything here?
 		}
@@ -223,7 +224,7 @@ namespace FileFind.Meshwork.GtkClient
 			try {
 				UpdateConnectionList();
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowErrorDialog (ex.ToString(), Gui.MainWindow.Window);
 			}
 		}
@@ -233,7 +234,7 @@ namespace FileFind.Meshwork.GtkClient
 			try {
 				UpdateConnectionList();
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowErrorDialog (ex.ToString(), Gui.MainWindow.Window);
 			}
 		}
@@ -272,7 +273,7 @@ namespace FileFind.Meshwork.GtkClient
 				ChatRoomInvitationDialog dialog = new ChatRoomInvitationDialog (network, inviteFrom, room, invitation);
 				dialog.Show ();
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowErrorDialog (ex.ToString(), Gui.MainWindow.Window);
 			}
 		}
@@ -286,7 +287,7 @@ namespace FileFind.Meshwork.GtkClient
 				}
 				page.AddToChat(messageFrom, messageText);
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowErrorDialog (ex.ToString(), Gui.MainWindow.Window);
 			}
 		}
@@ -298,7 +299,7 @@ namespace FileFind.Meshwork.GtkClient
 					(room.Properties["Window"] as ChatRoomSubpage).AddToChat (node, text);
 				}
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowErrorDialog (ex.ToString(), Gui.MainWindow.Window);
 			}
 		}		
@@ -317,7 +318,7 @@ namespace FileFind.Meshwork.GtkClient
 				return accept;
 				
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				return false;
 			}
 		}
@@ -335,7 +336,7 @@ namespace FileFind.Meshwork.GtkClient
 				receiveKeyWait.Set ();
 				
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowErrorDialog (ex.ToString(), Gui.MainWindow.Window);
 			}
 		}
@@ -345,7 +346,7 @@ namespace FileFind.Meshwork.GtkClient
 			try {
 				UpdateConnectionList();
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowErrorDialog (ex.ToString(), Gui.MainWindow.Window);
 			}
 		}
@@ -355,7 +356,7 @@ namespace FileFind.Meshwork.GtkClient
 			try {
 				UpdateConnectionList();
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowErrorDialog (ex.ToString(), Gui.MainWindow.Window);
 			}
 		}
@@ -365,7 +366,7 @@ namespace FileFind.Meshwork.GtkClient
 			try {
 				AddConnectionEventHandlers(c);
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowErrorDialog (ex.ToString(), Gui.MainWindow.Window);
 			}
 		}
@@ -391,7 +392,7 @@ namespace FileFind.Meshwork.GtkClient
 			try {
 				UpdateConnectionList ();
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowErrorDialog (ex.ToString(), Gui.MainWindow.Window);
 			}
 		}
@@ -401,7 +402,7 @@ namespace FileFind.Meshwork.GtkClient
 			try {
 				UpdateConnectionList ();
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowErrorDialog (ex.ToString(), Gui.MainWindow.Window);
 			}
 		}
@@ -411,7 +412,7 @@ namespace FileFind.Meshwork.GtkClient
 			try {
 				UpdateConnectionList();
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowErrorDialog (ex.ToString(), Gui.MainWindow.Window);
 			}
 		}
@@ -424,7 +425,7 @@ namespace FileFind.Meshwork.GtkClient
 
 				UpdateConnectionList ();
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowErrorDialog (ex.ToString(), Gui.MainWindow.Window);
 			}
 		}
@@ -441,7 +442,7 @@ namespace FileFind.Meshwork.GtkClient
 
 		private void map_MapError(Exception ex)
 		{
-			LoggingService.LogError("Map Error", ex);
+			Core.LoggingService.LogError("Map Error", ex);
 		}
 
 		public bool UserListVisible {

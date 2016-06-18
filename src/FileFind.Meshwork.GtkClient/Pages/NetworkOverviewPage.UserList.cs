@@ -11,6 +11,7 @@ using System;
 using System.Globalization;
 using Gtk;
 using FileFind.Meshwork;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork.GtkClient
 {
@@ -194,7 +195,7 @@ namespace FileFind.Meshwork.GtkClient
 				RefreshUserList();
 				Gui.MainWindow.UpdateStatusText ();
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowErrorDialog (ex.ToString(), Gui.MainWindow.Window);
 			}
 		}

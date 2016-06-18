@@ -13,6 +13,7 @@ using System.Collections;
 using System.Collections.Generic;
 using FileFind.Meshwork.Destination;
 using FileFind.Meshwork.Transport;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork
 {
@@ -119,13 +120,13 @@ namespace FileFind.Meshwork
 								network.ConnectTo(transport);
 							}
 						} catch (Exception ex) {
-							LoggingService.LogError("AutoconnectManager: Error while trying to connect", ex);
+							Core.LoggingService.LogError("AutoconnectManager: Error while trying to connect", ex);
 						}
 					} else {
 						// Nothing left, I give up! :(
 						network.ConnectingTo -= connectingToHandler;
 						network.NewIncomingConnection -= incomingConnectionHandler;
-						LoggingService.LogDebug("AutoconnectManager: Nothing left to connect to.");
+						Core.LoggingService.LogDebug("AutoconnectManager: Nothing left to connect to.");
 						return;
 					}
 				}

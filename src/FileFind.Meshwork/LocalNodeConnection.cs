@@ -21,6 +21,7 @@ using FileFind.Meshwork.Collections;
 using FileFind.Meshwork.Exceptions;
 using FileFind.Meshwork.Transport;
 using FileFind.Meshwork.Protocol;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork
 {
@@ -180,7 +181,7 @@ namespace FileFind.Meshwork
 				if (connectionState != ConnectionState.Disconnected) {
 					Disconnect(ex);
 				} else {
-					LoggingService.LogWarning("Tried to send a message after being disconnected");
+					Core.LoggingService.LogWarning("Tried to send a message after being disconnected");
 				}
 			}
 		}
@@ -200,15 +201,15 @@ namespace FileFind.Meshwork
 			transport.BeginReceiveMessage(receiveDataCallback, null);
 		}
 	
-		private void OnTransportConnected (ITransport transport)
+		private void OnTransportConnected (object sender, EventArgs e)
 		{
 			if (ConnectionConnected != null)
 				ConnectionConnected(this);
 		}
 		
-		private void OnTransportDisconnected (ITransport transport, Exception ex)
+        private void OnTransportDisconnected (object sender, ErrorEventArgs e)
 		{
-			Disconnect (ex);
+            Disconnect(e.Exception);
 		}
 		
 		public void Disconnect () 
@@ -219,7 +220,7 @@ namespace FileFind.Meshwork
 		public void Disconnect (Exception ex)
 		{
 			try {
-				LoggingService.LogDebug("Local Node Connection Disconnect.");
+				Core.LoggingService.LogDebug("Local Node Connection Disconnect.");
 
 				pingTimer.Stop ();
 				timeoutTimer.Stop ();
@@ -232,12 +233,12 @@ namespace FileFind.Meshwork
 				transport.Network.RemoveConnection(this);
 			
 				if (ex != null) {					
-					LoggingService.LogError("Error in connection with " + this.RemoteAddress, ex);
+					Core.LoggingService.LogError("Error in connection with " + this.RemoteAddress, ex);
 					if (ConnectionError != null)
 						ConnectionError(this, ex);
 				}
 				
-				LoggingService.LogInfo("Connection to {0} closed.", this.RemoteAddress.ToString());
+				Core.LoggingService.LogInfo("Connection to {0} closed.", this.RemoteAddress.ToString());
 				
 				if (ConnectionClosed != null) {
 					ConnectionClosed(this);
@@ -249,7 +250,7 @@ namespace FileFind.Meshwork
 					transport.Network.SendBroadcast(transport.Network.MessageBuilder.CreateConnectionDownMessage(NodeLocal, this.NodeRemote), this.NodeRemote);
 				}
 			} catch (Exception exx) {
-				LoggingService.LogError(exx);
+				Core.LoggingService.LogError(exx);
 			}
 		}
 
@@ -280,7 +281,7 @@ namespace FileFind.Meshwork
 		{			
 			connectionState = ConnectionState.Ready;
 			
-			LoggingService.LogInfo("Connection to {0} is ready.", this.NodeRemote.NickName);
+			Core.LoggingService.LogInfo("Connection to {0} is ready.", this.NodeRemote.NickName);
 			
 			if (ConnectionReady != null) 
 				ConnectionReady(this);
@@ -330,7 +331,7 @@ namespace FileFind.Meshwork
 			try {
 				if (connectionState == ConnectionState.Disconnected) {
 					// Connection has been closed. Ignore the message.
-					LoggingService.LogWarning("LocalNodeConnection: Ignored message received after connection was closed.");
+					Core.LoggingService.LogWarning("LocalNodeConnection: Ignored message received after connection was closed.");
 					return;
 				}
 				
@@ -350,7 +351,7 @@ namespace FileFind.Meshwork
 					if (String.IsNullOrEmpty(messageFrom) || messageFrom == remoteNodeInfo.NodeID) {
 						throw ex;
 					} else {
-						LoggingService.LogWarning("Ignored message with invalid signature from {0}", messageFrom);
+						Core.LoggingService.LogWarning("Ignored message with invalid signature from {0}", messageFrom);
 						return;
 					}
 				}

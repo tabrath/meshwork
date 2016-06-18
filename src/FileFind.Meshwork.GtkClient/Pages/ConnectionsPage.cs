@@ -11,6 +11,7 @@ using System;
 using Gtk;
 using FileFind.Meshwork.Transport;
 using FileFind.Meshwork.FileTransfer;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork.GtkClient
 {
@@ -73,18 +74,18 @@ namespace FileFind.Meshwork.GtkClient
 			swindow.ShowAll();
 
 			Core.TransportManager.NewTransportAdded +=
-				(TransportEventHandler)DispatchService.GuiDispatch(
-					new TransportEventHandler(OnNewTransportAdded)
+                    (EventHandler<TransportEventArgs>)DispatchService.GuiDispatch(
+					new EventHandler<TransportEventArgs>(OnNewTransportAdded)
 				);
 
 			Core.TransportManager.TransportRemoved +=
-				(TransportEventHandler)DispatchService.GuiDispatch(
-					new TransportEventHandler(OnTransportRemoved)
+				(EventHandler<TransportEventArgs>)DispatchService.GuiDispatch(
+					new EventHandler<TransportEventArgs>(OnTransportRemoved)
 				);
 
 			Core.TransportManager.TransportError += 
-				(TransportErrorEventHandler)DispatchService.GuiDispatch(
-				    new TransportErrorEventHandler(CoreTransportManagerTransportError)
+                (EventHandler<ErrorEventArgs>)DispatchService.GuiDispatch(
+				    new EventHandler<ErrorEventArgs>(CoreTransportManagerTransportError)
 				);
 		}
 
@@ -94,18 +95,18 @@ namespace FileFind.Meshwork.GtkClient
 			}
 		}
 
-		private void OnNewTransportAdded (ITransport transport)
+        private void OnNewTransportAdded(object sender, TransportEventArgs args)
 		{
 			try {
-				connectionListStore.AppendValues(transport);
+				connectionListStore.AppendValues(args.Transport);
 				Gui.MainWindow.RefreshCounts();
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowErrorDialog(ex.ToString(), Gui.MainWindow.Window);
 			}
 		}
 
-		private void OnTransportRemoved (ITransport removedTransport)
+        private void OnTransportRemoved(object sender, TransportEventArgs args)
 		{
 			Gui.MainWindow.RefreshCounts();
 			
@@ -114,7 +115,7 @@ namespace FileFind.Meshwork.GtkClient
 			if (connectionListStore.IterIsValid(iter)) {
 				do {
 					ITransport transport = (ITransport) connectionListStore.GetValue (iter, 0);
-					if (transport == removedTransport) {
+					if (transport == args.Transport) {
 						connectionListStore.Remove (ref iter);
 						return;
 					} 
@@ -123,7 +124,7 @@ namespace FileFind.Meshwork.GtkClient
 			}
 		}
 		
-		void CoreTransportManagerTransportError (ITransport transport, Exception ex)
+        void CoreTransportManagerTransportError (object sender, ErrorEventArgs args)
 		{
 			RefreshList();		
 		}

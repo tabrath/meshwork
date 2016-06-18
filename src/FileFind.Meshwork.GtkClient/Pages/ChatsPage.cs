@@ -11,6 +11,7 @@ using Gtk;
 using System;
 using System.Collections.Generic;
 using FileFind.Meshwork;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork.GtkClient 
 {
@@ -238,7 +239,7 @@ namespace FileFind.Meshwork.GtkClient
 				Gui.MainWindow.RefreshCounts();
 
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 			}
 		}
 		

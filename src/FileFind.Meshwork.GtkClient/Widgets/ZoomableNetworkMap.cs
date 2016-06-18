@@ -16,6 +16,7 @@ using Cairo;
 using FileFind.Meshwork;
 using FileFind.Meshwork.Destination;
 using Pixane.Widgets;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork.GtkClient
 {
@@ -901,7 +902,7 @@ namespace FileFind.Meshwork.GtkClient
 			if (Error != null) {
 				Error(this, ex);
 			} else {
-				LoggingService.LogError("Error in the network map:", ex);
+				Core.LoggingService.LogError("Error in the network map:", ex);
 			}
 		}
 
@@ -911,7 +912,7 @@ namespace FileFind.Meshwork.GtkClient
 				foreach (DestinationInfo info in node.DestinationInfos) {
 					if (info.TypeName == "FileFind.Meshwork.Destination.TCPIPv4Destination") {
 						IPAddress address = IPAddress.Parse(info.Data[0]);
-						if (!Common.IsInternalIP(address)) {
+                        if (!address.IsInternalIP()) {
 							return address;
 						}
 					}

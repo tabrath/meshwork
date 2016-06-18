@@ -17,6 +17,7 @@ using Glade;
 using FileFind.Meshwork;
 using FileFind.Meshwork.Transport;
 using FileFind.Meshwork.Destination;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork.GtkClient
 {
@@ -215,7 +216,7 @@ namespace FileFind.Meshwork.GtkClient
 				Connect(selectedNetwork, address, ip, port);
 			
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowErrorDialog(ex.Message, base.Dialog);
 			}
 		}
@@ -242,7 +243,7 @@ namespace FileFind.Meshwork.GtkClient
 				
 				Dialog.Respond((int)ResponseType.Ok);
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowErrorDialog(ex.Message, base.Dialog);
 			}
 		}

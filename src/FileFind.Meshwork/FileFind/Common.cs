@@ -170,20 +170,6 @@ namespace FileFind
 			return strOut;
 		}
 
-		public static bool IsInternalIP (IPAddress address)
-		{
-			if (address.AddressFamily == AddressFamily.InterNetwork) {
-				byte[] bytes = address.GetAddressBytes();
-				return (bytes[0] == 10) || (bytes[0] == 192 && bytes[1] == 168) ||
-				       (bytes[0] == 172 && (bytes[1] >= 16 && bytes[1] <= 31)) || 
-				       (bytes[0] == 169 && bytes[1] == 254);
-			} else if (address.AddressFamily == AddressFamily.InterNetworkV6) {
-				return address.IsIPv6LinkLocal;
-			} else {
-				throw new ArgumentException("address must be IPv4 or IPv6");
-			}
-		}
-
 		public static string FormatFingerprint (string fingerprint)
 		{
 			return fingerprint.CutIntoSetsOf(8).Join(" ");

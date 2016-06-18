@@ -22,6 +22,7 @@ using Glade;
 using FileFind;
 using FileFind.Meshwork;
 using FileFind.Meshwork.Destination;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork.GtkClient.Windows
 {	
@@ -230,7 +231,7 @@ namespace FileFind.Meshwork.GtkClient.Windows
 						foundIPv6Internal = true;
 					}
 				} else if (destination is IPv4Destination && destination.IsExternal) {
-					internetIPLabel.Text = ((IPDestination)destination).IPAddress.ToString();
+					internetIPLabel.Text = ((IPDestination)destination).Address.ToString();
 				}
 			}
 			if (foundIPv6External) {
@@ -252,7 +253,7 @@ namespace FileFind.Meshwork.GtkClient.Windows
 					PluginInfo info = new PluginInfo (fileName);
 					pluginsListStore.AppendValues (info);
 				} catch (Exception ex) {
-					LoggingService.LogError(ex);
+					Core.LoggingService.LogError(ex);
 				}
 			}
 
@@ -392,7 +393,7 @@ namespace FileFind.Meshwork.GtkClient.Windows
 			foreach (string path in paths) {
 				string cleanPath = path.Trim ();
 				if (cleanPath != "") {
-					LoggingService.LogDebug(cleanPath);
+					Core.LoggingService.LogDebug(cleanPath);
 
 					Uri uri = new Uri (cleanPath);
 	
@@ -564,7 +565,7 @@ namespace FileFind.Meshwork.GtkClient.Windows
 		private string DetectPublicIP ()
 		{
 			try {
-				return FileFind.Stun.StunClient.GetExternalAddress().ToString();
+                return FileFind.Stun.StunClient.GetExternalAddressAsync().Result.ToString();
 			} catch (Exception) {
 				return "<Error>";
 			}
@@ -837,7 +838,7 @@ namespace FileFind.Meshwork.GtkClient.Windows
 					PluginInfo info = new PluginInfo (selector.Filename);
 					pluginsListStore.AppendValues (info);
 				} catch (Exception ex) {
-					LoggingService.LogError(ex);
+					Core.LoggingService.LogError(ex);
 				}
 			}
 			selector.Destroy();

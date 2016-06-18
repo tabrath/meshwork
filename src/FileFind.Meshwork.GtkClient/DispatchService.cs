@@ -30,6 +30,7 @@
 using System;
 using System.Threading;
 using System.Collections;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork.GtkClient
 {
@@ -221,10 +222,10 @@ namespace FileFind.Meshwork.GtkClient
 		static void HandlerError (GenericMessageContainer msg)
 		{
 			if (msg.CallerStack != null) {
-				LoggingService.LogError ("{0} {1}\nCaller stack:{2}", errormsg, msg.Exception.ToString (), msg.CallerStack);
+				Core.LoggingService.LogError ("{0} {1}\nCaller stack:{2}", errormsg, msg.Exception.ToString (), msg.CallerStack);
 			}
 			else
-				LoggingService.LogError ("{0} {1}\nCaller stack not available. Define the environment variable MONODEVELOP_DISPATCH_DEBUG to enable caller stack capture.", errormsg, msg.Exception.ToString ());
+				Core.LoggingService.LogError ("{0} {1}\nCaller stack not available. Define the environment variable MONODEVELOP_DISPATCH_DEBUG to enable caller stack capture.", errormsg, msg.Exception.ToString ());
 		}
 	}
 

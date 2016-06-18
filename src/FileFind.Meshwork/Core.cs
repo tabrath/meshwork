@@ -22,6 +22,8 @@ using FileFind.Meshwork.FileTransfer.BitTorrent;
 using FileFind.Meshwork.Search;
 using FileFind.Meshwork.Transport;
 using FileFind.Meshwork.Destination;
+using System.ComponentModel.Composition.Hosting;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork
 {
@@ -32,12 +34,12 @@ namespace FileFind.Meshwork
 	public static class Core
 	{
 		static List<Network> networks = new List<Network>();
-		static ShareBuilder shareBuilder;
-		static ShareHasher shareHasher;
-		static ShareWatcher shareWatcher;
-		static TransportManager transportManager;
-		static FileTransferManager fileTransferManager;
-		static FileSearchManager fileSearchManager;
+		static IShareBuilder shareBuilder;
+		static IShareHasher shareHasher;
+		static IShareWatcher shareWatcher;
+		static ITransportManager transportManager;
+		static IFileTransferManager fileTransferManager;
+		static IFileSearchManager fileSearchManager;
 		static ArrayList transportListeners = new ArrayList ();
 		static FileSystemProvider fileSystem;
 		static ISettings settings;
@@ -48,8 +50,10 @@ namespace FileFind.Meshwork
 		static IAvatarManager avatarManager;
 		static List<PluginInfo> loadedPlugins = new List<PluginInfo>();
 		static IPlatform os;
-		static DestinationManager destinationManager;
+		static IDestinationManager destinationManager;
 		static List<FailedTransportListener> failedTransportListeners = new List<FailedTransportListener>();
+
+        public static ILoggingService LoggingService { get; }
 
 		public static event EventHandler Started;
 		public static event EventHandler FinishedLoading;
@@ -60,9 +64,16 @@ namespace FileFind.Meshwork
 		public static event EventHandler PasswordPrompt;
 		
 		public static readonly int ProtocolVersion = 250;
+        public static CompositionContainer Container { get; }
+        private static readonly AggregateCatalog catalog;
 
 		static Core ()
 		{
+            catalog = new AggregateCatalog(new AssemblyCatalog(typeof(Core).Assembly));
+            Container = new CompositionContainer(catalog);
+
+            LoggingService = Container.GetExportedValue<ILoggingService>();
+
 			if (Environment.OSVersion.Platform == PlatformID.Unix) {
 				if (Common.OSName == "Linux") {
 					Core.OS = new LinuxPlatform();
@@ -116,20 +127,15 @@ namespace FileFind.Meshwork
 
 			fileSystem = new FileSystemProvider();
 
-			shareBuilder = new ShareBuilder();
+            shareBuilder = Container.GetExportedValue<IShareBuilder>();
 			shareBuilder.FinishedIndexing += ShareBuilder_FinishedIndexing;
 
-			shareWatcher = new ShareWatcher();
-
-			shareHasher = new ShareHasher();
-
-			transportManager = new TransportManager ();
-
-			fileTransferManager = new FileTransferManager();
-
-			fileSearchManager = new FileSearchManager();
-
-			destinationManager = new DestinationManager();
+            shareWatcher = Container.GetExportedValue<IShareWatcher>();
+            shareHasher = Container.GetExportedValue<IShareHasher>();
+            transportManager = Container.GetExportedValue<ITransportManager>();
+            fileTransferManager = Container.GetExportedValue<IFileTransferManager>();
+            fileSearchManager = Container.GetExportedValue<IFileSearchManager>();
+            destinationManager = Container.GetExportedValue<IDestinationManager>();
 
 			// XXX: Use reflection to load these:
 			destinationManager.RegisterSource(new TCPIPv4DestinationSource());
@@ -205,7 +211,7 @@ namespace FileFind.Meshwork
 			}
 		}
 
-		public static FileSearchManager FileSearchManager {
+		public static IFileSearchManager FileSearchManager {
 			get {
 				return fileSearchManager;
 			}
@@ -220,7 +226,7 @@ namespace FileFind.Meshwork
 			}
 		}
 
-		public static DestinationManager DestinationManager {
+		public static IDestinationManager DestinationManager {
 			get {
 				return destinationManager;
 			}
@@ -241,13 +247,13 @@ namespace FileFind.Meshwork
 			}
 		}
 
-		public static ShareHasher ShareHasher {
+		public static IShareHasher ShareHasher {
 			get {
 				return shareHasher;
 			}
 		}
 
-		public static ShareBuilder ShareBuilder {
+		public static IShareBuilder ShareBuilder {
 			get {
 				return shareBuilder;
 			}
@@ -440,13 +446,13 @@ namespace FileFind.Meshwork
 			return result;
 		}
 
-		public static TransportManager TransportManager {
+		public static ITransportManager TransportManager {
 			get {
 				return transportManager;
 			}
 		}
 
-		public static FileTransferManager FileTransferManager {
+		public static IFileTransferManager FileTransferManager {
 			get {
 				return fileTransferManager;
 			}

@@ -9,8 +9,8 @@ namespace FileFind.Meshwork
 	{
 		// Don't do substring comparisons on type field since it's currently only 'D' or 'F',
 		// but make the ":", "!:" and "=" operators still work.
-		public static readonly Operator Equal    = new Operator ("equals", Catalog.GetString ("is"), "= '{0}'", ":", "=");
-		public static readonly Operator NotEqual = new Operator ("notEqual", Catalog.GetString ("is not"), "!= '{0}'", true, "!:");
+		public static new readonly Operator Equal    = new Operator ("equals", Catalog.GetString ("is"), "= '{0}'", ":", "=");
+		public static new readonly Operator NotEqual = new Operator ("notEqual", Catalog.GetString ("is not"), "!= '{0}'", true, "!:");
 		
 		public override AliasedObjectSet<Operator> OperatorSet {
 			get {

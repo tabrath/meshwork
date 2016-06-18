@@ -20,6 +20,7 @@ using FileFind.Meshwork.Protocol;
 using FileFind.Meshwork.FileTransfer;
 using System.Security.Cryptography;
 using FileFind.Meshwork.Errors;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork
 {
@@ -104,7 +105,7 @@ namespace FileFind.Meshwork
 
 		internal void ProcessRequestKeyMessage (Node messageFrom)
 		{
-			LoggingService.LogInfo("MessageProcessor: {0} requested public key, sending.", messageFrom.ToString());
+			Core.LoggingService.LogInfo("MessageProcessor: {0} requested public key, sending.", messageFrom.ToString());
 			network.SendMyKey(messageFrom);
 		}
 
@@ -136,24 +137,24 @@ namespace FileFind.Meshwork
 			// This lets us create a brand new session key
 			// if someone wants that for whatever reason.
 			if (messageFrom.SessionKeyDataHash != String.Empty && keyHash != messageFrom.SessionKeyDataHash) {
-				LoggingService.LogInfo("MessageProcessor: Re-keying with: {0}.", messageFrom.ToString());
+				Core.LoggingService.LogInfo("MessageProcessor: Re-keying with: {0}.", messageFrom.ToString());
 				messageFrom.ClearSessionKey();
 			}
 			
 			if (messageFrom.FinishedKeyExchange == false) {
-				LoggingService.LogInfo("Received secure channel key from: {0}.", messageFrom.ToString());
+				Core.LoggingService.LogInfo("Received secure channel key from: {0}.", messageFrom.ToString());
 			
 				messageFrom.SessionKeyDataHash = keyHash;
 				messageFrom.DecryptKeyExchange(key);
 
 				if (messageFrom.RemoteHasKey == true) {
-					LoggingService.LogInfo("Secure communication channel to {0} now avaliable.", messageFrom.ToString());
+					Core.LoggingService.LogInfo("Secure communication channel to {0} now avaliable.", messageFrom.ToString());
 					network.SendInfoToTrustedNode(messageFrom);
 				} else {
 					messageFrom.CreateNewSessionKey();
 				}
 			} else {
-				LoggingService.LogWarning("Received secure communication key from: {0}, but key exchange was already finished!", messageFrom.ToString());
+				Core.LoggingService.LogWarning("Received secure communication key from: {0}, but key exchange was already finished!", messageFrom.ToString());
 			}
 		}
 
@@ -246,7 +247,7 @@ namespace FileFind.Meshwork
 			if (file != null) {
 				Core.FileTransferManager.StartTransfer(network, messageFrom, file);
 			} else {
-				LoggingService.LogWarning("Invalid file request from: {0}", messageFrom);
+				Core.LoggingService.LogWarning("Invalid file request from: {0}", messageFrom);
 				network.SendNonCriticalError(messageFrom, new FileNotFoundError(info.FullPath, info.TransferId));
 			}
 		}
@@ -302,11 +303,11 @@ namespace FileFind.Meshwork
 				if (c == null) {
 					c = new ChatRoom (network, message.RoomId, message.RoomName);
 					network.AddChatRoom(c);
-					LoggingService.LogWarning("MessageProcessor: Assuming chat room {0} exists and that somebody will be joining it in a moment...", c.Name);
+					Core.LoggingService.LogWarning("MessageProcessor: Assuming chat room {0} exists and that somebody will be joining it in a moment...", c.Name);
 				}
 			
 				if (!c.Users.ContainsKey(messageFrom.NodeID)) {
-					LoggingService.LogWarning("MessageProcessor: Assuming {0} is in {1}...", messageFrom.NickName, c.Name);
+					Core.LoggingService.LogWarning("MessageProcessor: Assuming {0} is in {1}...", messageFrom.NickName, c.Name);
 					c.AddUser(messageFrom);
 
 					network.RaiseJoinedChat (messageFrom, c);
@@ -359,7 +360,7 @@ namespace FileFind.Meshwork
 			if (c != null) {
 				network.RemoveConnection(c);
 			} else {
-				LoggingService.LogWarning("MessageProcessor: ConnectionDown received from {0} for a non-existant connection!", messageFrom);
+				Core.LoggingService.LogWarning("MessageProcessor: ConnectionDown received from {0} for a non-existant connection!", messageFrom);
 			}
 			network.Cleanup();
 		}
@@ -379,7 +380,7 @@ namespace FileFind.Meshwork
 					}
 				}
 			} else {				
-				LoggingService.LogWarning("Received LeaveChat message for unknown room {0}", action.RoomName);
+				Core.LoggingService.LogWarning("Received LeaveChat message for unknown room {0}", action.RoomName);
 			}
 		}
 
@@ -423,7 +424,7 @@ namespace FileFind.Meshwork
 
 			if (!Core.IsLocalNode(memo.Node)) {
 				if (network.TrustedNodes.ContainsKey(memo.Node.NodeID) && memo.Verify() == false) {
-					LoggingService.LogWarning("Ignored a memo with an invalid signature!");
+					Core.LoggingService.LogWarning("Ignored a memo with an invalid signature!");
 					return;
 				}
 				network.AddOrUpdateMemo(memo);
@@ -438,7 +439,7 @@ namespace FileFind.Meshwork
 				if (messageFrom == theMemo.Node) {
 					network.RemoveMemo(theMemo);
 				} else {
-					LoggingService.LogWarning("Someone tired to delete someone else's memo!");
+					Core.LoggingService.LogWarning("Someone tired to delete someone else's memo!");
 				}
 			}
 		}

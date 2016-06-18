@@ -2,6 +2,7 @@
 
 using System;
 using System.Net;
+using System.Net.Sockets;
 
 namespace FileFind
 {
@@ -44,6 +45,22 @@ namespace FileFind
 			
 			return network1.Equals(network2);
 		}
+
+        public static bool IsInternalIP(this IPAddress address)
+        {
+            if (address.AddressFamily == AddressFamily.InterNetwork)
+            {
+                byte[] bytes = address.GetAddressBytes();
+                return (bytes[0] == 10) || (bytes[0] == 192 && bytes[1] == 168) ||
+                       (bytes[0] == 172 && (bytes[1] >= 16 && bytes[1] <= 31)) ||
+                       (bytes[0] == 169 && bytes[1] == 254);
+            }
+
+            if (address.AddressFamily == AddressFamily.InterNetworkV6)
+                return address.IsIPv6LinkLocal;
+
+            throw new ArgumentException("address must be IPv4 or IPv6");
+        }
 	}
 
 }

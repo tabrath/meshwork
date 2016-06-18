@@ -70,7 +70,7 @@ namespace FileFind.Meshwork.GtkClient
 			
 			m_TextView.Buffer.CreateMark("end", m_TextView.Buffer.EndIter, false);
 			
-			LoggingService.AddLogger(this);
+			Core.LoggingService.AddLogger(this);
 		}
 		
 		#region ILogger	implementation

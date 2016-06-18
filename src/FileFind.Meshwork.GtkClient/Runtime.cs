@@ -33,6 +33,7 @@ using System.Threading;
 using System.IO;
 using Mono.Unix;
 using FileFind.Meshwork.GtkClient.Windows;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork.GtkClient
 {
@@ -73,7 +74,7 @@ namespace FileFind.Meshwork.GtkClient
 
 			/* Load settings */
 			if (options.ConfigPath != null) {
-				LoggingService.LogDebug("Using config dir: " + options.ConfigPath);
+				Core.LoggingService.LogDebug("Using config dir: " + options.ConfigPath);
 				Settings.OverrideConfigPath(options.ConfigPath);
 			}
 			tmpSettings = Settings.ReadSettings();
@@ -118,7 +119,7 @@ namespace FileFind.Meshwork.GtkClient
 						if (pixbuf != null)
 							Gtk.IconTheme.AddBuiltinIcon(iconName, size, pixbuf);
 						else
-							LoggingService.LogWarning("Missing embeded icon: {0} ({1}x{1})", iconName, size);
+							Core.LoggingService.LogWarning("Missing embeded icon: {0} ({1}x{1})", iconName, size);
 					}
 				}
 			}
@@ -157,7 +158,7 @@ namespace FileFind.Meshwork.GtkClient
 			Core.Started += (EventHandler)DispatchService.GuiDispatch(new EventHandler(Core_Started));
 
 			if (tmpSettings.FirstRun) {
-				LoggingService.LogDebug("First run");
+				Core.LoggingService.LogDebug("First run");
 
 				// Generate key
 				if (!tmpSettings.HasKey) {
@@ -253,7 +254,7 @@ namespace FileFind.Meshwork.GtkClient
 					return false;
 				}
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				throw ex;
 			}
 		}

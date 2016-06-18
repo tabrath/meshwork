@@ -8,264 +8,213 @@
 //
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Threading;
 using MonoTorrent.Common;
 using FileFind.Meshwork.Filesystem;
 using System.Runtime.Remoting.Messaging;
 using System.Text;
+using System.ComponentModel.Composition;
+using System.Collections.Concurrent;
+using System.Threading.Tasks;
+using System.Threading.Tasks.Schedulers;
+using System.Collections.ObjectModel;
+using Meshwork.Logging;
 
 /* TODO
  * 
  * Replace Started/Finished/HashingFile events with just "Changed"
- * Check to see if file is already in queue.
- * Don't cache LocalFile object in ShareHasherTask. Store path instead and check that file still exists in share before hashing. If not, ignore.
  * 
  */
 
 namespace FileFind.Meshwork
 {
-	public delegate void ShareHasherTaskEventHandler (ShareHasherTask task);
-	
-	public class ShareHasher
-	{
-		// Keeps track of worker threads and what their current task is, if any.
-		Dictionary<Thread, ShareHasherTask> threads = new Dictionary<Thread, ShareHasherTask>();
-		
-		AutoResetEvent mutex = new AutoResetEvent(false);
-		List<ShareHasherTask> queue = new List<ShareHasherTask>();
-		ShareHasherTaskComparer comparer = new ShareHasherTaskComparer();
-		
-		int threadCount;
-		
-		public event EventHandler QueueChanged;
-		public event ShareHasherTaskEventHandler StartedHashingFile;
-		public event ShareHasherTaskEventHandler FinishedHashingFile;
+    [Export(typeof(IShareHasher)), PartCreationPolicy(CreationPolicy.Shared)]
+    internal class ShareHasher : IShareHasher
+    {
+        // Keeps track of worker threads and what their current task is, if any.
+        private readonly ConcurrentDictionary<Thread, TaskCompletionSource<bool>> threads;
+        private readonly BlockingCollection<TaskCompletionSource<bool>> queue;
+        private readonly CancellationTokenSource cancellation;
+        private readonly int threadCount;
+        private readonly ILoggingService loggingService;
 
-		internal ShareHasher ()
-		{
-			threadCount = System.Environment.ProcessorCount;
-		}
-		
-		internal void HashFile (LocalFile file)
-		{
-			HashFile(file, null);
-		}
+        public event EventHandler QueueChanged;
+        public event EventHandler<FilenameEventArgs> StartedHashingFile;
+        public event EventHandler<FilenameEventArgs> FinishedHashingFile;
 
-		internal void HashFile (LocalFile file, AsyncCallback callback)
-		{
-			if (file.LocalPath == null)
-				throw new ArgumentNullException("file");
-			
-			if (!System.IO.File.Exists(file.LocalPath))
-				throw new ArgumentException("File does not exist");
-			
-			lock (queue) {
-				// Check to see if this file is already queued.
-				foreach (ShareHasherTask existingTask in queue) {
-					if (existingTask.File.LocalPath == file.LocalPath)
-						return;
-				}				
-				// If not, add it!
-				var task = new ShareHasherTask(file, callback);
-				queue.Add(task);
-				queue.Sort(comparer);
-				
-				if (QueueChanged != null)
-					QueueChanged(this, EventArgs.Empty);
-			}
-			mutex.Set();
-		}
+        public int FilesRemaining
+        {
+            get { return this.queue.Count; }
+        }
 
-		internal void Start ()
-		{
-			lock (threads) {
-				while (threads.Count < threadCount) {
-					Thread thread = new Thread(DoHashing);
-					thread.Start();
-					threads.Add(thread, null);
-				}
-			}
-		}
+        public bool Going
+        {
+            get { return (!this.queue.IsCompleted && this.queue.Count > 0 && threads.Count > 0); }
+        }
 
-		internal void Stop ()
-		{
-			lock (threads) {
-				foreach (Thread thread in threads.Keys) {
-					thread.Abort();
-				}
-				threads.Clear();
-			}
-		}
+        public int CurrentFileCount
+        {
+            get { return threads.Where(t => t.Value != null && !t.Value.Task.IsCompleted).Count(); }
+        }
 
-		private void DoHashing ()
-		{
-			try {
-				while (true) {
-					WaitUntilAvaliable ();
-					
-					ShareHasherTask task;
+        public IEnumerable<string> CurrentFiles
+        {
+            get { return threads.Where(t => t.Value != null).Select(t => ((LocalFile)t.Value.Task.AsyncState).LocalPath).ToArray(); }
+        }
 
-					lock (queue) {
-						if (queue.Count == 0)
-							continue;
-						
-						task = queue[0];
-						queue.RemoveAt(0);
-						
-						if (QueueChanged != null)
-							QueueChanged(this, EventArgs.Empty);
-					}
-					
-					lock (threads) {
-						threads[Thread.CurrentThread] = task;
-					}
+        [ImportingConstructor]
+        public ShareHasher(ILoggingService loggingService)
+        {
+            this.loggingService = loggingService;
+            this.threadCount = System.Environment.ProcessorCount;
+            this.threads = new ConcurrentDictionary<Thread, TaskCompletionSource<bool>>();
+            this.queue = new BlockingCollection<TaskCompletionSource<bool>>();
+            this.cancellation = new CancellationTokenSource();
 
-					try {
-						Hash(task);
-					} catch (Exception ex) {
-						// XXX: Do something here!
-						LoggingService.LogError("Problem while hashing file.", ex);
-					}
-					
-					lock (threads) {
-						threads[Thread.CurrentThread] = null;
-					}
-				}
-			} catch (ThreadAbortException) {
-				// Someone called Stop(), that's OK.
+        }
 
-			} catch (Exception ex) {
-				// XXX: Do something here, we've aborted
-				// everything!
-				LoggingService.LogError("AAHHHH!!!", ex);
-				throw ex;
-			}
-		}
-	
-		public int FilesRemaining {
-			get {
-				return queue.Count;
-			}
-		}
+        public Task HashFile(LocalFile file)
+        {
+            if (file.LocalPath == null)
+                throw new ArgumentNullException(nameof(file));
 
-		public bool Going {
-			get {
-				return (queue.Count > 0 && threads.Count > 0);
-			}
-		}
-		
-		public int CurrentFileCount {
-			get {
-				int r = 0;
-				lock (threads) {
-					foreach (Thread thread in threads.Keys) {
-						ShareHasherTask task = threads[thread];
-						if (task != null)
-							r++;
-					}
-				}
-				return r;
-			}
-		}
-		
-		public string CurrentFiles {
-			get {
-				var builder = new StringBuilder();
-				lock (threads) {
-					foreach (Thread thread in threads.Keys) {
-						ShareHasherTask task = threads[thread];
-						if (task != null) {
-							builder.AppendLine(task.File.LocalPath);
-						}
-					}
-				}
-				return builder.ToString();
-			}
-		}				
+            if (!System.IO.File.Exists(file.LocalPath))
+                throw new ArgumentException("File does not exist");
 
-		private void Hash(ShareHasherTask task)
-		{
-			if (StartedHashingFile != null)
-				StartedHashingFile(task);
-			
-			/* Create the torrent */
-			TorrentCreator creator = new TorrentCreator();
-			// Have to put something bogus here, otherwise MonoTorrent crashes!
-			creator.Announces.Add(new MonoTorrentCollection<string>());
-			creator.Announces[0].Add(String.Empty);
-			
-			creator.Path = task.File.LocalPath;
-			Torrent torrent = Torrent.Load(creator.Create());
+            if (this.queue.Any(t => ((LocalFile)t.Task.AsyncState).LocalPath == file.LocalPath))
+                throw new InvalidOperationException("File is already in queue");
 
-			/* Update the database */
-			string[] pieces = new string[torrent.Pieces.Count];
-			for (int x = 0; x < torrent.Pieces.Count; x++) {
-				byte[] hash = torrent.Pieces.ReadHash(x);
-				pieces[x] = Common.BytesToString(hash);
-			}
+            var tcs = new TaskCompletionSource<bool>(state: file);
+            if (this.queue.TryAdd(tcs, 1000, this.cancellation.Token))
+            {
+                QueueChanged?.Invoke(this, EventArgs.Empty);
+            }
 
-			task.File.Update(Common.BytesToString(torrent.InfoHash.ToArray()),
-			                 Common.BytesToString(torrent.Files[0].SHA1), 
-			                 torrent.PieceLength, pieces);
-					
-			if (FinishedHashingFile != null)
-				FinishedHashingFile(task);
-			
-			if (task.Callback != null)
-				task.Callback(null);
-		}
+            Start();
 
-		private void WaitUntilAvaliable ()
-		{
-			bool shouldWait = false;
-			lock (queue) {
-				if (queue.Count == 0) {
-					shouldWait = true;
-				}
-			}
-			if (shouldWait) {
-				mutex.WaitOne ();
-			}
-		}
+            return tcs.Task;
+        }
 
-		private class ShareHasherTaskComparer : Comparer<ShareHasherTask>
-		{
-			public override int Compare (ShareHasherTask first, ShareHasherTask second)
-			{
-				// FIXME: Anything that has a callback should be sorted first!
-				return first.File.Size.CompareTo(second.File.Size);
-			}
-		}
-	}
-	
-	
-	public class ShareHasherTask
-	{
-		LocalFile m_File;
-		AsyncCallback m_Callback;
-		
-		public ShareHasherTask(LocalFile file)
-		{
-			m_File = file;
-		}
-		
-		public ShareHasherTask(LocalFile file, AsyncCallback callback)
-		{
-			m_File = file;
-			m_Callback = callback;
-		}
-		
-		public LocalFile File {
-			get {
-				return m_File;
-			}
-		}
+        public void Start()
+        {
+            while (threads.Count < threadCount)
+            {
+                Thread thread = new Thread(DoHashing) { IsBackground = true };
+                thread.Start();
+                threads.TryAdd(thread, null);
+            }
+        }
 
-		public AsyncCallback Callback {
-			get {
-				return m_Callback;
-			}
+        public void Stop()
+        {
+            if (this.cancellation != null)
+            {
+                this.cancellation.Cancel();
+                this.cancellation.Dispose();
+            }
+
+            if (this.queue != null)
+            {
+                this.queue.CompleteAdding();
+                this.queue.Dispose();
+            }
+
+            foreach (Thread thread in threads.Keys)
+            {
+                thread.Abort();
+            }
+            threads.Clear();
+        }
+
+        private void DoHashing()
+        {
+            try
+            {
+                TaskCompletionSource<bool> task;
+                while (!this.cancellation.IsCancellationRequested && this.queue.TryTake(out task, -1, this.cancellation.Token))
+                {
+                    threads[Thread.CurrentThread] = task;
+                    QueueChanged?.Invoke(this, EventArgs.Empty);
+
+                    if (!task.Task.IsCanceled && !task.Task.IsCompleted)
+                    {
+                        try
+                        {
+                            Hash(task);
+                        }
+                        catch (ThreadAbortException)
+                        {
+                            this.loggingService.LogInfo("Aborting hashing of file.");
+                        }
+                        catch (Exception ex)
+                        {
+                            // XXX: Do something here!
+                            this.loggingService.LogError("Problem while hashing file.", ex);
+                        }
+                    }
+
+                    threads[Thread.CurrentThread] = null;
+                }
+            }
+            catch (ThreadAbortException)
+            {
+                // Someone called Stop(), that's OK.
+
+            }
+            catch (Exception ex)
+            {
+                // XXX: Do something here, we've aborted
+                // everything!
+                this.loggingService.LogError("AAHHHH!!!", ex);
+                Stop();
+            }
+        }
+
+        private void Hash(TaskCompletionSource<bool> task)
+        {
+            var file = (LocalFile)task.Task.AsyncState;
+
+            this.loggingService.LogDebug("trying to hash " + file.FullPath);
+
+            StartedHashingFile?.Invoke(this, new FilenameEventArgs(file.FullPath));
+
+            try
+            {
+                /* Create the torrent */
+                TorrentCreator creator = new TorrentCreator();
+                // Have to put something bogus here, otherwise MonoTorrent crashes!
+                creator.Announces.Add(new MonoTorrentCollection<string>());
+                creator.Announces[0].Add(String.Empty);
+
+                creator.Path = file.LocalPath;
+                Torrent torrent = Torrent.Load(creator.Create());
+
+                /* Update the database */
+                string[] pieces = new string[torrent.Pieces.Count];
+                for (int x = 0; x < torrent.Pieces.Count; x++)
+                {
+                    byte[] hash = torrent.Pieces.ReadHash(x);
+                    pieces[x] = Common.BytesToString(hash);
+                }
+
+                file.Update(Common.BytesToString(torrent.InfoHash.ToArray()),
+                                 Common.BytesToString(torrent.Files[0].SHA1),
+                             torrent.PieceLength, pieces);
+
+                FinishedHashingFile?.Invoke(this, new FilenameEventArgs(file.FullPath));
+
+                task.TrySetResult(true);
+            }
+            catch (OperationCanceledException)
+            {
+                task.TrySetCanceled();
+            }
+            catch (Exception e)
+            {
+                task.TrySetException(e);
+            }
 		}
 	}
 }

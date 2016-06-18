@@ -21,6 +21,7 @@ using FileFind.Meshwork.Collections;
 using FileFind.Meshwork.Exceptions;
 using FileFind.Meshwork.Filesystem;
 using FileFind.Meshwork.Destination;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork 
 {
@@ -301,7 +302,7 @@ namespace FileFind.Meshwork
 				}
 
 				try {
-					LoggingService.LogInfo("Creating secure communication channel to {0}...", this.ToString());
+					Core.LoggingService.LogInfo("Creating secure communication channel to {0}...", this.ToString());
 
 					sentKeyExchange = true;
 
@@ -313,12 +314,12 @@ namespace FileFind.Meshwork
 					network.AckMethods.Add(m.MessageID, c);
 					network.SendRoutedMessage(m);
 				} catch (Exception ex) {
-					LoggingService.LogError("Failed to create key exchange! Hopefully we will retry...");
+					Core.LoggingService.LogError("Failed to create key exchange! Hopefully we will retry...");
 					sentKeyExchange = false;
 					throw ex;
 				}
 			} else {
-				LoggingService.LogWarning("Why are we trying to CreateNewSessionKey for {0} when FinishedKeyExchange=True?", this.ToString());
+				Core.LoggingService.LogWarning("Why are we trying to CreateNewSessionKey for {0} when FinishedKeyExchange=True?", this.ToString());
 			}
 		}
 

@@ -155,13 +155,13 @@ namespace FileFind.Meshwork.GtkClient
 			Core.ShareBuilder.StartedIndexing  += (EventHandler)DispatchService.GuiDispatch(new EventHandler(sb_StartedIndexing));
 			Core.ShareBuilder.FinishedIndexing += (EventHandler)DispatchService.GuiDispatch(new EventHandler(sb_FinishedIndexing));
 			Core.ShareBuilder.StoppedIndexing  += (EventHandler)DispatchService.GuiDispatch(new EventHandler(sb_StoppedIndexing));
-			Core.ShareBuilder.ErrorIndexing    += (ErrorEventHandler)DispatchService.GuiDispatch(new ErrorEventHandler(sb_ErrorIndexing));
-			Core.ShareHasher.StartedHashingFile += (ShareHasherTaskEventHandler)DispatchService.GuiDispatch(new ShareHasherTaskEventHandler(sh_StartedFinished));
-			Core.ShareHasher.FinishedHashingFile += (ShareHasherTaskEventHandler)DispatchService.GuiDispatch(new ShareHasherTaskEventHandler(sh_StartedFinished));
+            Core.ShareBuilder.ErrorIndexing    += (EventHandler<ErrorEventArgs>)DispatchService.GuiDispatch(new EventHandler<ErrorEventArgs>(sb_ErrorIndexing));
+            Core.ShareHasher.StartedHashingFile += (EventHandler<FilenameEventArgs>)DispatchService.GuiDispatch(new EventHandler<FilenameEventArgs>(sh_StartedFinished));
+			Core.ShareHasher.FinishedHashingFile += (EventHandler<FilenameEventArgs>)DispatchService.GuiDispatch(new EventHandler<FilenameEventArgs>(sh_StartedFinished));
 			Core.ShareHasher.QueueChanged += (EventHandler)DispatchService.GuiDispatch(new EventHandler(sh_QueueChanged));
 
-			Core.FileSearchManager.SearchAdded   += (FileSearchEventHandler)DispatchService.GuiDispatch(new FileSearchEventHandler(FileSearchManager_SearchAdded));
-			Core.FileSearchManager.SearchRemoved += (FileSearchEventHandler)DispatchService.GuiDispatch(new FileSearchEventHandler(FileSearchManager_SearchRemoved));
+			Core.FileSearchManager.SearchAdded   += (EventHandler<FileSearchEventArgs>)DispatchService.GuiDispatch(new EventHandler<FileSearchEventArgs>(FileSearchManager_SearchAdded));
+			Core.FileSearchManager.SearchRemoved += (EventHandler<FileSearchEventArgs>)DispatchService.GuiDispatch(new EventHandler<FileSearchEventArgs>(FileSearchManager_SearchRemoved));
 
 			window.Resize (Gui.Settings.WindowSize.Width, Gui.Settings.WindowSize.Height);
 			window.Move (Gui.Settings.WindowPosition.X, Gui.Settings.WindowPosition.Y);
@@ -328,7 +328,7 @@ namespace FileFind.Meshwork.GtkClient
 			statusLabel.Text = text;
 		}
 
-		private void sb_ErrorIndexing (object sender, Exception ex)
+        private void sb_ErrorIndexing (object sender, ErrorEventArgs args)
 		{
 			// FIXME: Do something here.
 			UpdateTaskStatusIcon();
@@ -356,7 +356,7 @@ namespace FileFind.Meshwork.GtkClient
 			UpdateTaskStatusIcon();
 		}
 		
-		private void sh_StartedFinished (ShareHasherTask task)
+        private void sh_StartedFinished (object sender, FilenameEventArgs args)
 		{
 			UpdateTaskStatusIcon();
 		}
@@ -436,14 +436,14 @@ namespace FileFind.Meshwork.GtkClient
 			Gui.Settings.WindowPosition = new System.Drawing.Point(e.Event.X, e.Event.Y);
 		}
 
-		private void FileSearchManager_SearchAdded (FileSearch search)
+		private void FileSearchManager_SearchAdded(object sender, FileSearchEventArgs e)
 		{
-			sidebar.AddNewSearch(search);
+            sidebar.AddNewSearch(e.Search);
 		}
 
-		private void FileSearchManager_SearchRemoved (FileSearch search)
+		private void FileSearchManager_SearchRemoved(object sender, FileSearchEventArgs e)
 		{
-			sidebar.RemoveSearch(search);
+            sidebar.RemoveSearch(e.Search);
 		}
 	}
 }

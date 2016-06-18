@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Security.Cryptography;
 using IO = System.IO;
 using FileFind.Meshwork.Logging;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork.DaemonClient
 {
@@ -48,7 +49,7 @@ namespace FileFind.Meshwork.DaemonClient
 			Core.AvatarManager = new AvatarManager();
 			
 			Core.NetworkAdded += AddNetworkEvents;
-			LoggingService.AddLogger(this);
+			Core.LoggingService.AddLogger(this);
 
 			Core.Start();
 		}
@@ -99,13 +100,13 @@ namespace FileFind.Meshwork.DaemonClient
 			try {
 				connection.ConnectionError += connection_ConnectionError;
 			} catch (Exception ex) {
-				LoggingService.LogError("Error in network_NewConnection: " + ex);
+				Core.LoggingService.LogError("Error in network_NewConnection: " + ex);
 			}
 		}
 
 		private void connection_ConnectionError (LocalNodeConnection connection, Exception ex)
 		{
-			LoggingService.LogError("Error in connection {0}: {1}", connection.RemoteAddress, ex);
+			Core.LoggingService.LogError("Error in connection {0}: {1}", connection.RemoteAddress, ex);
 		}
 
 		private void network_UserOnline (Network network, Node node)
@@ -115,7 +116,7 @@ namespace FileFind.Meshwork.DaemonClient
 					network.RequestPublicKey(node);
 				}
 			} catch (Exception ex) {
-				LoggingService.LogError("Error in network_UserOnline: " + ex);
+				Core.LoggingService.LogError("Error in network_UserOnline: " + ex);
 			}
 		}
 		
@@ -151,7 +152,7 @@ namespace FileFind.Meshwork.DaemonClient
 					IO.File.WriteAllText(keyFile, publicKey.ToArmoredString());
 				}
 			} catch (Exception ex) {
-				LoggingService.LogError("Error in network_ReceivedKey: " + ex);
+				Core.LoggingService.LogError("Error in network_ReceivedKey: " + ex);
 			}
 			return false;
 		}
@@ -166,7 +167,7 @@ namespace FileFind.Meshwork.DaemonClient
 					messageFrom.Network.SendPrivateMessage (messageFrom, "Access Denied");
 				}
 			} catch (Exception ex) {
-				LoggingService.LogError("Error in network_PrivateMessage: " + ex);
+				Core.LoggingService.LogError("Error in network_PrivateMessage: " + ex);
 			}
 		}
 

@@ -23,6 +23,7 @@ using FileFind.Meshwork.Exceptions;
 using FileFind.Meshwork.Search;
 using FileFind.Meshwork.Destination;
 using FileFind.Serialization;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork.GtkClient
 {
@@ -79,7 +80,7 @@ namespace FileFind.Meshwork.GtkClient
 					foreach (var key in networkInfo.TrustedNodes.Keys.ToArray()) {
 						var info = networkInfo.TrustedNodes[key];
 						if (String.IsNullOrEmpty(info.NodeID)) {
-							LoggingService.LogWarning("Ignored TrustedNodeInfo with bad public key.");
+							Core.LoggingService.LogWarning("Ignored TrustedNodeInfo with bad public key.");
 							networkInfo.TrustedNodes.Remove(key);
 						}
 					}

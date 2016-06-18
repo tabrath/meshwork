@@ -12,52 +12,77 @@ using System.Linq;
 using System.Text;
 using System.Collections;
 using System.Collections.Generic;
-using IO=System.IO;
+using IO = System.IO;
 using System.Threading;
 using FileFind.Meshwork.Filesystem;
 using System.Data;
+using System.ComponentModel.Composition;
+using System.Collections.Concurrent;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork
 {
-	public delegate void ShareBuilderFileEventHandler (ShareBuilder builder, string filePath);
-	
-	public class ShareBuilder
+    [Export(typeof(IShareBuilder)), PartCreationPolicy(CreationPolicy.Shared)]
+    internal class ShareBuilder : IShareBuilder
 	{
-		Thread thread = null;
+		private Thread thread = null;
+        private readonly IShareHasher hasher;
+        private readonly ILoggingService loggingService;
+        private BlockingCollection<QueueItem> queue;
+        private CancellationTokenSource cancellation;
+
+        private struct QueueItem
+        {
+            public LocalDirectory Parent { get; }
+            public IO.DirectoryInfo Directory { get; }
+
+            public QueueItem(LocalDirectory parent, IO.DirectoryInfo directory)
+            {
+                Parent = parent;
+                Directory = directory;
+            }
+        }
 
 		public event EventHandler StartedIndexing;
 		public event EventHandler FinishedIndexing;
 		public event EventHandler StoppedIndexing;
-		public event ShareBuilderFileEventHandler IndexingFile;
-		public event ErrorEventHandler ErrorIndexing;
+		public event EventHandler<FilenameEventArgs> IndexingFile;
+		public event EventHandler<ErrorEventArgs> ErrorIndexing;
 
-		internal ShareBuilder ()
+        public bool Going
+        {
+            get { return thread != null; }
+        }
+
+        [ImportingConstructor]
+        public ShareBuilder(IShareHasher hasher, ILoggingService loggingService)
 		{
+            this.hasher = hasher;
+            this.loggingService = loggingService;
+            this.queue = new BlockingCollection<QueueItem>();
+            this.cancellation = new CancellationTokenSource();
 		}
 
-		public bool Going {
-			get {
-				return thread != null;
-			}
+		public void Start()
+		{
+			if (thread != null)
+                throw new InvalidOperationException("Already in progress.");
+
+            thread = new Thread(DoStart) { IsBackground = true };
+			thread.Start();
 		}
 
-		internal void Start ()
+		private void DoStart()
 		{
-			if (thread == null) {
-				thread = new Thread (DoStart);
-				thread.Start();
-			} else {
-				throw new InvalidOperationException("Already in progress.");
-			}
-		}
+			this.loggingService.LogInfo("Started re-index of shared files...");
 
-		private void DoStart ()
-		{
-			LoggingService.LogInfo("Started re-index of shared files...");
-			
-			if (StartedIndexing != null) {
-				StartedIndexing (this, EventArgs.Empty);
-			}
+            if (this.queue == null)
+                this.queue = new BlockingCollection<QueueItem>();
+
+            if (this.cancellation == null)
+                this.cancellation = new CancellationTokenSource();
+
+            StartedIndexing?.Invoke(this, EventArgs.Empty);
 
 			LocalDirectory myDirectory = Core.FileSystem.RootDirectory.MyDirectory;
 			
@@ -65,99 +90,133 @@ namespace FileFind.Meshwork
 			Core.FileSystem.PurgeMissing();
 			
 			// If any dirs were removed from the list in settings, remove them from db.
-			foreach (LocalDirectory dir in myDirectory.Directories) {
-				if (!Core.Settings.SharedDirectories.Contains(dir.LocalPath)) {
+			foreach (LocalDirectory dir in myDirectory.Directories)
+            {
+				if (!Core.Settings.SharedDirectories.Contains(dir.LocalPath))
+                {
 					dir.Delete();
 				}
 			}
 			
 			TimeSpan lastScanAgo = (DateTime.Now - Core.Settings.LastShareScan);
-			if (Math.Abs(lastScanAgo.TotalHours) >= 1) {
-				LoggingService.LogDebug("Starting directory scan. Last scan was {0} minutes ago.", Math.Abs(lastScanAgo.TotalMinutes));				
-				foreach (string directoryName in Core.Settings.SharedDirectories) {
-					IO.DirectoryInfo info = new IO.DirectoryInfo(directoryName);	
-					if (IO.Directory.Exists(directoryName)) {
-						ProcessDirectory(myDirectory, info);
-					} else {
-						LoggingService.LogWarning("Directory does not exist: {0}.", info.FullName);
+			if (Math.Abs(lastScanAgo.TotalHours) >= 1)
+            {
+				this.loggingService.LogDebug("Starting directory scan. Last scan was {0} minutes ago.", Math.Abs(lastScanAgo.TotalMinutes));				
+				foreach (string directoryName in Core.Settings.SharedDirectories)
+                {
+					var info = new IO.DirectoryInfo(directoryName);	
+					if (info.Exists)
+                    {
+                        this.queue.Add(new QueueItem(myDirectory, info), this.cancellation.Token);
+					}
+                    else
+                    {
+						this.loggingService.LogWarning("Directory does not exist: {0}.", info.FullName);
 					}
 				}
+
+                try
+                {
+                    QueueItem item;
+                    while (this.queue.TryTake(out item, 1000, this.cancellation.Token))
+                    {
+                        ProcessDirectory(item.Parent, item.Directory);
+                    }
+                }
+                catch (ThreadAbortException)
+                {
+                    this.loggingService.LogInfo("Aborted indexing of shared files...");
+                }
 				
 				Core.Settings.LastShareScan = DateTime.Now;
 				
-			} else {
-				LoggingService.LogDebug("Skipping directory scan because last scan was {0} minutes ago.", Math.Abs(lastScanAgo.TotalMinutes));
+			} else
+            {
+				this.loggingService.LogDebug("Skipping directory scan because last scan was {0} minutes ago.", Math.Abs(lastScanAgo.TotalMinutes));
 			}
 			
-			LoggingService.LogInfo("Finished re-index of shared files...");
+			this.loggingService.LogInfo("Finished re-index of shared files...");
 			
 			thread = null;
 			
-			if (FinishedIndexing != null) {
-				FinishedIndexing (this, EventArgs.Empty);
-			}
+            FinishedIndexing?.Invoke(this, EventArgs.Empty);
 		}
 
-		internal void Stop ()
+		public void Stop()
 		{
-			if (thread != null) {
+            if (this.cancellation != null && !this.cancellation.IsCancellationRequested)
+            {
+                this.cancellation.Cancel();
+                this.cancellation.Dispose();
+            }
+
+            if (this.queue != null)
+            {
+                this.queue.CompleteAdding();
+                this.queue.Dispose();
+            }
+
+			if (thread != null)
+            {
 				thread.Abort();
 				thread = null;
 				
-				LoggingService.LogInfo("Aborted re-index of shared files...");
+				this.loggingService.LogInfo("Aborted re-index of shared files...");
 				
-				if (StoppedIndexing != null) {
-					StoppedIndexing(this, EventArgs.Empty);
-				}
+                StoppedIndexing?.Invoke(this, EventArgs.Empty);
 			}
 		}
 
-		private void ProcessDirectory (LocalDirectory parentDirectory, IO.DirectoryInfo directoryInfo)
+		private void ProcessDirectory(LocalDirectory parentDirectory, IO.DirectoryInfo directoryInfo)
 		{
-			if (parentDirectory == null) {
-				throw new ArgumentNullException("parentDirectory");
-			}
-			if (directoryInfo == null) {
-				throw new ArgumentNullException("directoryInfo");
-			}
+			if (parentDirectory == null)
+                throw new ArgumentNullException(nameof(parentDirectory));
 
-			try {
-				if (directoryInfo.Name.StartsWith(".") == false) {
-					LocalDirectory directory = (LocalDirectory)parentDirectory.GetSubdirectory(directoryInfo.Name);
+			if (directoryInfo == null)
+                throw new ArgumentNullException(nameof(directoryInfo));
 
-					if (directory == null) {
-						directory = parentDirectory.CreateSubDirectory(directoryInfo.Name, directoryInfo.FullName);
+			try
+            {
+				LocalDirectory directory = (LocalDirectory)parentDirectory.GetSubdirectory(directoryInfo.Name);
+
+				if (directory == null)
+					directory = parentDirectory.CreateSubDirectory(directoryInfo.Name, directoryInfo.FullName);
+
+                foreach (var fileInfo in directoryInfo.EnumerateFiles().Where(f => !f.Name.StartsWith(".")))
+                {
+                    IndexingFile?.Invoke(this, new FilenameEventArgs(fileInfo.FullName));
+					
+					LocalFile file = (LocalFile)directory.GetFile(fileInfo.Name);
+					if (file == null)
+                    {
+						file = directory.CreateFile(fileInfo);
+					}
+                    else
+                    {
+						// XXX: Update file info
 					}
 
-					foreach (IO.FileInfo fileInfo in directoryInfo.GetFiles()) {
-						if (fileInfo.Name.StartsWith(".") == false) {
-							
-							if (IndexingFile != null)
-								IndexingFile(this, fileInfo.FullName);
-							
-							LocalFile file = (LocalFile)directory.GetFile(fileInfo.Name);
-							if (file == null) {
-								file = directory.CreateFile(fileInfo);
-							} else {								
-								// XXX: Update file info
-							}
-							if (String.IsNullOrEmpty(file.InfoHash)) {
-								Core.ShareHasher.HashFile(file);
-							}
-						}
-					}
-
-					foreach (IO.DirectoryInfo subDirectoryInfo in directoryInfo.GetDirectories()) {
-						ProcessDirectory(directory, subDirectoryInfo);
+					if (string.IsNullOrEmpty(file.InfoHash))
+                    {
+						this.hasher.HashFile(file);
 					}
 				}
-			} catch (ThreadAbortException) {
+
+                foreach (var subDirectoryInfo in directoryInfo.EnumerateDirectories().Where(d => !d.Name.StartsWith(".")))
+                {
+					//ProcessDirectory(directory, subDirectoryInfo);
+                    this.queue.Add(new QueueItem(directory, subDirectoryInfo), this.cancellation.Token);
+				}
+			}
+            catch (ThreadAbortException)
+            {
 				// Canceled, ignore error.
-			} catch (Exception ex) {
-				LoggingService.LogError("Error while re-indexing shared files:", ex);
-				if (ErrorIndexing != null) {
-					ErrorIndexing(this, ex);
-				}
+			}
+            catch (Exception ex)
+            {
+				this.loggingService.LogError("Error while re-indexing shared files:", ex);
+
+                ErrorIndexing?.Invoke(this, new ErrorEventArgs(ex));
 			}
 		}
 	}

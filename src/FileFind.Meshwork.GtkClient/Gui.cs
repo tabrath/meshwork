@@ -15,6 +15,7 @@ using Gtk;
 using FileFind.Meshwork.GtkClient.Windows;
 using System.Runtime.InteropServices;
 using Mono.Unix;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork.GtkClient
 {
@@ -231,7 +232,7 @@ namespace FileFind.Meshwork.GtkClient
 				if (Environment.OSVersion.Platform == PlatformID.Unix) {
 					pixbuf = LoadIconFromTheme(name, size);
 					if (pixbuf == null) {
-						LoggingService.LogWarning("Icon not found in theme: {0} {1}", name, size);
+						Core.LoggingService.LogWarning("Icon not found in theme: {0} {1}", name, size);
 						pixbuf = LoadIconFromResource(name, size);
 					}
 				} else {
@@ -246,7 +247,7 @@ namespace FileFind.Meshwork.GtkClient
 				}
 			}
 			
-			LoggingService.LogWarning("UNABLE TO LOAD ICON {0}, SIZE {1}", String.Join(",",names), size);
+			Core.LoggingService.LogWarning("UNABLE TO LOAD ICON {0}, SIZE {1}", String.Join(",",names), size);
 			return null;
 		}
 

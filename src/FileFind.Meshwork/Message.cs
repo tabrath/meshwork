@@ -15,6 +15,7 @@ using FileFind.Meshwork.Protocol;
 
 namespace FileFind.Meshwork
 {
+    //TODO: split this into own message types + MessageFactory
 	public class Message
 	{
 		Network network;

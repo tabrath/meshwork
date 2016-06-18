@@ -8,6 +8,7 @@
 //
 
 using System;
+using System.Linq;
 
 namespace FileFind.Meshwork.GtkClient
 {
@@ -28,7 +29,7 @@ namespace FileFind.Meshwork.GtkClient
 
 		public int Count {
 			get {
-				return Core.FileTransferManager.Transfers.Count;
+				return Core.FileTransferManager.Transfers.Count();
 			}
 		}
 

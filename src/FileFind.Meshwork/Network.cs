@@ -27,6 +27,8 @@ using FileFind.Meshwork.Transport;
 using FileFind.Meshwork.Search;
 using FileFind.Collections;
 using FileFind.Meshwork.Errors;
+using System.Collections.ObjectModel;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork 
 {
@@ -223,7 +225,7 @@ namespace FileFind.Meshwork
 			}
 		}
 
-		public IDictionary<string, Node> Nodes {
+		public IReadOnlyDictionary<string, Node> Nodes {
 			get {
 				return new ReadOnlyDictionary<string, Node>(nodes);
 			}
@@ -233,7 +235,7 @@ namespace FileFind.Meshwork
 		{
 			nodes.Add(node.NodeID, node);
 			
-			LoggingService.LogInfo("User online: " + node.NickName);
+			Core.LoggingService.LogInfo("User online: " + node.NickName);
 					
 			if (UserOnline != null)
 				UserOnline (this, node);
@@ -363,16 +365,16 @@ namespace FileFind.Meshwork
 			if (connection is LocalNodeConnection) {
 				var localConnection = (LocalNodeConnection)connection;
 				if (localConnection.Incoming) {
-					LoggingService.LogInfo("New incoming connection from {0}.", localConnection.RemoteAddress);
+					Core.LoggingService.LogInfo("New incoming connection from {0}.", localConnection.RemoteAddress);
 					if (NewIncomingConnection != null)
 						NewIncomingConnection(this, localConnection);
 				} else {					
-					LoggingService.LogInfo("New outgoing connection to {0}.", localConnection.RemoteAddress);
+					Core.LoggingService.LogInfo("New outgoing connection to {0}.", localConnection.RemoteAddress);
 					if (ConnectingTo != null)
 						ConnectingTo(this, localConnection);
 				}
 			} else if (connection is RemoteNodeConnection) {
-				LoggingService.LogInfo("Added new connection between {0} and {1}.", connection.NodeLocal.NickName, connection.NodeRemote.NickName);
+				Core.LoggingService.LogInfo("Added new connection between {0} and {1}.", connection.NodeLocal.NickName, connection.NodeRemote.NickName);
 				if (ConnectionUp != null)
 					ConnectionUp(connection);
 			}
@@ -384,7 +386,7 @@ namespace FileFind.Meshwork
 				connections.Remove(connection);
 			
 			if (connection is RemoteNodeConnection) {
-				LoggingService.LogInfo("Removed connection between {0} and {1}.", connection.NodeLocal.NickName, connection.NodeRemote.NickName);			
+				Core.LoggingService.LogInfo("Removed connection between {0} and {1}.", connection.NodeLocal.NickName, connection.NodeRemote.NickName);			
 				if (ConnectionDown != null)
 					ConnectionDown(connection);
 			}
@@ -946,7 +948,7 @@ namespace FileFind.Meshwork
 
 		public void RequestPublicKey(Node node)
 		{
-			LoggingService.LogInfo("Requesting public key from {0}.", node);
+			Core.LoggingService.LogInfo("Requesting public key from {0}.", node);
 			Message m = MessageBuilder.CreateRequestKeyMessage(node);
 			SendRoutedMessage(m);
 		}
@@ -995,15 +997,15 @@ namespace FileFind.Meshwork
 				if (n.FinishedKeyExchange == false & n.RemoteHasKey == false) {
 					n.RemoteHasKey = true;
 
-					LoggingService.LogDebug("{0} received our session key request!", n);
+					Core.LoggingService.LogDebug("{0} received our session key request!", n);
 
 					if (n.LocalHasKey == true) {
-						LoggingService.LogInfo("Secure communication channel to {0} is now available", n);
+						Core.LoggingService.LogInfo("Secure communication channel to {0} is now available", n);
 						SendInfoToTrustedNode(n);
 					}
 				}
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 			}
 		}
 
@@ -1032,7 +1034,7 @@ namespace FileFind.Meshwork
 							if (!realRoom.Users.ContainsKey(currentNode.NodeID)) {
 								if (currentNode.NodeID == Core.MyNodeID) {
 									// err.. but.. i'm not in here!!
-									LoggingService.LogWarning("Someone thought I was in {0} but I'm not!!", realRoom.Name);
+									Core.LoggingService.LogWarning("Someone thought I was in {0} but I'm not!!", realRoom.Name);
 									this.LeaveChat(realRoom);
 
 								} else {
@@ -1041,7 +1043,7 @@ namespace FileFind.Meshwork
 								}
 							}
 						} else {
-							LoggingService.LogWarning("TRIED TO ADD NON-EXISTANT NODE {0} TO CHATROOM {1}", nodeId, roomInfo.Name);
+							Core.LoggingService.LogWarning("TRIED TO ADD NON-EXISTANT NODE {0} TO CHATROOM {1}", nodeId, roomInfo.Name);
 						}
 					}
 				}
@@ -1089,7 +1091,7 @@ namespace FileFind.Meshwork
 				message = info.Message;
 
 				if (Connections.Contains(connection) == false || connection.ConnectionState == ConnectionState.Disconnected) {
-					LoggingService.LogWarning("Network.ProcessMessage: Ignored message from disconnected connection.");
+					Core.LoggingService.LogWarning("Network.ProcessMessage: Ignored message from disconnected connection.");
 					return;
 				}
 
@@ -1177,7 +1179,7 @@ namespace FileFind.Meshwork
 				
 				if (connection != null && (message.From == connection.RemoteNodeInfo.NodeID & message.To == this.LocalNode.NodeID & message.Type == MessageType.CriticalError)) {
 					MeshworkError error = ((MeshworkError)(content));
-					LoggingService.LogError("RECIEVED CRITICAL ERROR", error.Message);
+					Core.LoggingService.LogError("RECIEVED CRITICAL ERROR", error.Message);
 					if (ReceivedCriticalError != null) {
 						ReceivedCriticalError((INodeConnection)connection, error);
 					}
@@ -1291,7 +1293,7 @@ namespace FileFind.Meshwork
 						// Do nothing here.
 						break;
 					default:
-						LoggingService.LogWarning("Received unhandled Message type: {0}, content: {1}", message.Type, content);
+						Core.LoggingService.LogWarning("Received unhandled Message type: {0}, content: {1}", message.Type, content);
 						break;
 				}
 				
@@ -1311,7 +1313,7 @@ namespace FileFind.Meshwork
 				// XXX: Better error handling!
 				string messageType = (message != null) ? message.Type.ToString() : "(Unknown)";
 				string messageFrom = (message != null) ? message.From : "(Unknown)";
-				LoggingService.LogError("Network.ProcessMessage: Error processing message of type {0} from {1}: {2}", messageType, messageFrom, ex.ToString());
+				Core.LoggingService.LogError("Network.ProcessMessage: Error processing message of type {0} from {1}: {2}", messageType, messageFrom, ex.ToString());
 			}
 		}
 
@@ -1374,7 +1376,7 @@ namespace FileFind.Meshwork
 						memosToRemove = null;
 					}
 					
-					LoggingService.LogInfo("{0} has disconnected from the network.", n);
+					Core.LoggingService.LogInfo("{0} has disconnected from the network.", n);
 			
 					if (UserOffline != null) {
 						UserOffline(this, n);
@@ -1432,11 +1434,11 @@ namespace FileFind.Meshwork
 							DestNode.NickName = connection.DestNodeNickname;
 						}
 					} else {
-						LoggingService.LogWarning("Someone told me about an invalid connection - both sides are the same?! Thats no good!! " + connection.SourceNodeNickname + " <-> " + connection.DestNodeNickname);
+						Core.LoggingService.LogWarning("Someone told me about an invalid connection - both sides are the same?! Thats no good!! " + connection.SourceNodeNickname + " <-> " + connection.DestNodeNickname);
 					}
 				} else {
 					if (this.FindConnection(connection.SourceNodeID, connection.DestNodeID) == null) {
-						LoggingService.LogWarning("THAT CONNECTION DOESNT EXIST!!!" + connection.SourceNodeNickname + " <-> " + connection.DestNodeNickname);
+						Core.LoggingService.LogWarning("THAT CONNECTION DOESNT EXIST!!!" + connection.SourceNodeNickname + " <-> " + connection.DestNodeNickname);
 						this.SendBroadcast(this.MessageBuilder.CreateConnectionDownMessage(connection.SourceNodeID, connection.DestNodeID), this.LocalNode);
 					}
 				}
@@ -1447,7 +1449,7 @@ namespace FileFind.Meshwork
 		internal void RaiseUpdateNodeInfo (string oldNickname, Node node)
 		{
 			if (oldNickname != node.NickName)
-				LoggingService.LogInfo("{0} has changed their nickname to {1}.", oldNickname, node.NickName);
+				Core.LoggingService.LogInfo("{0} has changed their nickname to {1}.", oldNickname, node.NickName);
 				
 			if (UpdateNodeInfo != null) {
 				UpdateNodeInfo(this, oldNickname, node);
@@ -1456,7 +1458,7 @@ namespace FileFind.Meshwork
 
 		internal void RaiseReceivedNonCriticalError (Node from, MeshworkError error)
 		{
-			LoggingService.LogWarning("RECEIVE NONCRITICALERROR: " + error.Message);
+			Core.LoggingService.LogWarning("RECEIVE NONCRITICALERROR: " + error.Message);
 			
 			if (ReceivedNonCriticalError != null)
 				ReceivedNonCriticalError(this, from, error);
@@ -1464,7 +1466,7 @@ namespace FileFind.Meshwork
 
 		protected virtual void OnMemoDeleted (Memo memo)
 		{
-			LoggingService.LogInfo("Memo deleted: " + memo.Subject);
+			Core.LoggingService.LogInfo("Memo deleted: " + memo.Subject);
 
 			if (MemoDeleted != null) {
 				MemoDeleted (this, memo);
@@ -1490,7 +1492,7 @@ namespace FileFind.Meshwork
 			
 		protected virtual void OnLeftChat (ChatEventArgs args)
 		{
-			LoggingService.LogInfo("{0} has left {1}", args.Node.NickName, args.Room.Name);
+			Core.LoggingService.LogInfo("{0} has left {1}", args.Node.NickName, args.Room.Name);
 		    
 			if (LeftChat != null) {
 				LeftChat (this, args);
@@ -1499,7 +1501,7 @@ namespace FileFind.Meshwork
 		
 		protected virtual void OnMemoUpdated (Memo memo)
 		{
-			LoggingService.LogInfo("Memo updated: {0} by {1}.", memo.Subject, memo.Node);
+			Core.LoggingService.LogInfo("Memo updated: {0} by {1}.", memo.Subject, memo.Node);
 			
 			if (MemoUpdated != null) {
 				MemoUpdated (this, memo);
@@ -1508,7 +1510,7 @@ namespace FileFind.Meshwork
 
 		protected virtual void OnMemoAdded (Memo memo)
 		{
-			LoggingService.LogInfo("Memo added: {0} by {1}", memo.Subject, memo.Node);
+			Core.LoggingService.LogInfo("Memo added: {0} by {1}", memo.Subject, memo.Node);
 			
 			if (MemoAdded != null) {
 				MemoAdded(this, memo);
@@ -1522,7 +1524,7 @@ namespace FileFind.Meshwork
 
 		protected virtual void OnJoinedChat (ChatEventArgs args)
 		{
-			LoggingService.LogInfo("{0} has joined {1}", args.Node.NickName, args.Room.Name);
+			Core.LoggingService.LogInfo("{0} has joined {1}", args.Node.NickName, args.Room.Name);
 
 			if (JoinedChat != null) {
 				JoinedChat (this, args);
@@ -1562,7 +1564,7 @@ namespace FileFind.Meshwork
 					ChatRoom room = chatRooms[invitation.RoomId];
 					ReceivedChatInvite(this, from, room, invitation);
 				} else {
-					LoggingService.LogWarning("Ignored invitation for non-existent chatroom: {0}", invitation.RoomName);
+					Core.LoggingService.LogWarning("Ignored invitation for non-existent chatroom: {0}", invitation.RoomName);
 				}
 			}
 		}

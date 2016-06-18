@@ -8,6 +8,7 @@
 //
 
 using System;
+using System.Linq;
 using FileFind.Meshwork.Search;
 
 namespace FileFind.Meshwork.GtkClient
@@ -33,7 +34,7 @@ namespace FileFind.Meshwork.GtkClient
 
 		public int Count {
 			get {
-				return search.Results.Count;
+				return search.Results.Count();
 			}
 		}
 

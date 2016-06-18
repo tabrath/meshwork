@@ -52,9 +52,9 @@ namespace FileFind.Meshwork.GtkClient
 				});
 			};			
 			
-			Core.ShareBuilder.IndexingFile += delegate (ShareBuilder builder, string filePath) {
-				Application.Invoke(delegate {
-					indexingFileLabel.Text = filePath;
+            Core.ShareBuilder.IndexingFile += delegate (object sender, FilenameEventArgs args) {
+                Application.Invoke(delegate {
+                    indexingFileLabel.Text = args.Filename;
 					indexingSpinner.Show();
 				});
 			};
@@ -109,7 +109,7 @@ namespace FileFind.Meshwork.GtkClient
 					hashingCountLabel.Text = FileFind.Common.FormatNumber(Core.ShareHasher.FilesRemaining);
 					hashingSpinner.Show();
 				} else {
-					hashingFileLabel.Text = Core.ShareHasher.CurrentFiles;;
+                    hashingFileLabel.Text = Core.ShareHasher.CurrentFiles.Join("\n");
 					hashingCountLabel.Text = FileFind.Common.FormatNumber(Core.ShareHasher.FilesRemaining);
 					hashingSpinner.Show();
 				}

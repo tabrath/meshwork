@@ -8,10 +8,33 @@
 //
 
 using System;
+using FileFind.Meshwork.Filesystem;
 using FileFind.Meshwork.Protocol;
 
 namespace FileFind.Meshwork
 {
+    public class ErrorEventArgs : EventArgs
+    {
+        public Exception Exception { get; }
+
+        public ErrorEventArgs(Exception exception)
+            : base()
+        {
+            Exception = exception;
+        }
+    }
+
+    public class FilenameEventArgs : EventArgs
+    {
+        public string Filename { get; }
+
+        public FilenameEventArgs(string filename)
+            : base()
+        {
+            Filename = filename;
+        }
+    }
+
 	/*
 	public class FileOfferedEventArgs
 	{

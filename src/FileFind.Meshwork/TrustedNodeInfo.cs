@@ -17,6 +17,7 @@ using FileFind.Meshwork;
 using FileFind.Meshwork.Collections;
 using FileFind.Meshwork.Exceptions;
 using FileFind.Meshwork.Destination;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork
 {
@@ -91,7 +92,7 @@ namespace FileFind.Meshwork
 				try {
 					this.PublicKey = new PublicKey(value.Value);
 				} catch (Exception ex) {
-					LoggingService.LogError("Error loading TrustedNodeInfo", ex);
+					Core.LoggingService.LogError("Error loading TrustedNodeInfo", ex);
 					this.PublicKey = null;
 				}
 			}

@@ -10,12 +10,11 @@
 using System;
 using System.Text;
 using System.IO;
-using System.Security;
 using System.Security.Cryptography;
 
 namespace FileFind.Meshwork.Security
 {
-	public static class Encryption 
+    public static class Encryption 
 	{
 		public static byte[] Decrypt(ICryptoTransform transform, byte[] buffer)
 		{
@@ -27,45 +26,62 @@ namespace FileFind.Meshwork.Security
 			return transform.TransformFinalBlock(buffer, 0, buffer.Length);
 		}
 
-		public static string PasswordEncrypt (string password, string text, byte[] salt)
+		public static string PasswordEncrypt(string password, string text, byte[] salt)
 		{
-			Rfc2898DeriveBytes passwordBytes = new Rfc2898DeriveBytes(password, salt);
-			
-			SymmetricAlgorithm alg = RijndaelManaged.Create();
-			alg.Key = passwordBytes.GetBytes(32);
-			alg.IV = passwordBytes.GetBytes(16);
-			
-			byte[] buf = Encoding.UTF8.GetBytes(text);
+            var result = string.Empty;
 
-			using (MemoryStream ms = new MemoryStream()) {
-				CryptoStream encryptStream = new CryptoStream(ms, alg.CreateEncryptor(), CryptoStreamMode.Write);
-				
-				encryptStream.Write(buf, 0, buf.Length);
-				encryptStream.Flush();
-				encryptStream.Close();
+            using (var passwordBytes = new Rfc2898DeriveBytes(password, salt))
+            {
+                using (var alg = Rijndael.Create())
+                {
+                    alg.Key = passwordBytes.GetBytes(32);
+                    alg.IV = passwordBytes.GetBytes(16);
 
-				return Convert.ToBase64String(ms.ToArray());
-			}
+                    var buffer = Encoding.UTF8.GetBytes(text);
+
+                    using (var ms = new MemoryStream())
+                    {
+                        using (var encryptStream = new CryptoStream(ms, alg.CreateEncryptor(), CryptoStreamMode.Write))
+                        {
+                            encryptStream.Write(buffer, 0, buffer.Length);
+                            encryptStream.Flush();
+                        }
+
+                        result = Convert.ToBase64String(ms.ToArray());
+                    }
+                }
+            }
+
+            return result;
 		}
 
 		public static string PasswordDecrypt(string password, string text, byte[] salt)
 		{
-			Rfc2898DeriveBytes bytes = new Rfc2898DeriveBytes(password, salt);
+            var result = string.Empty;
 
-			SymmetricAlgorithm alg = RijndaelManaged.Create();
-			alg.Key = bytes.GetBytes(32);
-			alg.IV = bytes.GetBytes(16);
+            using (var bytes = new Rfc2898DeriveBytes(password, salt))
+            {
+                using (var alg = Rijndael.Create())
+                {
+                    alg.Key = bytes.GetBytes(32);
+                    alg.IV = bytes.GetBytes(16);
 
-			byte[] buf = Convert.FromBase64String(text);
+                    var buffer = Convert.FromBase64String(text);
 
-			using (MemoryStream ms = new MemoryStream()) {
-				CryptoStream decryptStream = new CryptoStream(ms, alg.CreateDecryptor(), CryptoStreamMode.Write);
-				
-				decryptStream.Write(buf, 0, buf.Length);
-				decryptStream.Close();
-				
-				return Encoding.UTF8.GetString(ms.ToArray());
-			}
+                    using (var ms = new MemoryStream())
+                    {
+                        using (var decryptStream = new CryptoStream(ms, alg.CreateDecryptor(), CryptoStreamMode.Write))
+                        {
+                            decryptStream.Write(buffer, 0, buffer.Length);
+                            decryptStream.Flush();
+                        }
+
+                        result = Encoding.UTF8.GetString(ms.ToArray());
+    			    }
+                }
+            }
+
+            return result;
 		}
 	}
 }

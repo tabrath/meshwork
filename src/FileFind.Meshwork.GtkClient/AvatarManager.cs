@@ -12,6 +12,7 @@ using System.IO;
 using System.Collections;
 using System.Collections.Generic;
 using Gdk;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork.GtkClient
 {
@@ -110,7 +111,7 @@ namespace FileFind.Meshwork.GtkClient
 				LoadAvatar(dest, node);
 			} catch (Exception ex) {
 				//TODO: What to do here?
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 			}
 		}
 

@@ -13,7 +13,8 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Text;
 using System.Linq;
-using Classless.Hasher;
+using System.Data.HashFunction;
+using System.Data.HashFunction.CRCStandards;
 
 namespace FileFind.Meshwork
 {
@@ -22,7 +23,7 @@ namespace FileFind.Meshwork
 		public const string BEGIN_LINE = "-----BEGIN MESHWORK PUBLIC KEY BLOCK-----";
 		public const string END_LINE = "-----END MESHWORK PUBLIC KEY BLOCK-----";
 
-		static CRC s_CRC24 = new CRC(CRCParameters.GetParameters(CRCStandard.CRC24));
+        static CRC s_CRC24 = new CRC24();
 
 		public static PublicKey Parse (string armoredText)
 		{

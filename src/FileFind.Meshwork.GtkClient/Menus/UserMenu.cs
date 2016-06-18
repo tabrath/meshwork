@@ -12,6 +12,7 @@ using Glade;
 using System;
 using FileFind.Meshwork.Transport;
 using FileFind.Meshwork.Destination;
+using Meshwork.Logging;
 
 namespace FileFind.Meshwork.GtkClient
 {
@@ -150,7 +151,7 @@ namespace FileFind.Meshwork.GtkClient
 					Gui.ShowErrorDialog("You cannot connect to this user.");
 				}
 			} catch (Exception ex) {
-				LoggingService.LogError(ex);
+				Core.LoggingService.LogError(ex);
 				Gui.ShowErrorDialog(ex.Message);
 			}
 		}
