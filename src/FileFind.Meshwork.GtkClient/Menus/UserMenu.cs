@@ -91,7 +91,7 @@ namespace FileFind.Meshwork.GtkClient
 			m_TrustMenuItem.Visible = false;
 						
 			if (selectedNode != null) {
-				if (Core.IsLocalNode(selectedNode)) {
+                if (selectedNode.IsLocal) {
 					m_GetInfoMenuItem.Sensitive = true;
 					m_BrowseMenuItem.Sensitive = true;
 				}
@@ -176,7 +176,7 @@ namespace FileFind.Meshwork.GtkClient
 		void on_m_BrowseMenuItem_activate (object o, EventArgs e)
 		{
 			Gui.MainWindow.SelectedPage = UserBrowserPage.Instance;
-			if (Core.IsLocalNode(selectedNode)) {
+            if (selectedNode.IsLocal) {
 				UserBrowserPage.Instance.NavigateTo(Core.FileSystem.RootDirectory.MyDirectory.FullPath);
 			} else {
 				UserBrowserPage.Instance.NavigateTo(selectedNode.Directory.FullPath);

@@ -222,7 +222,7 @@ namespace FileFind.Meshwork
 		
 		public bool Verified {
 			get {
-				if (Core.IsLocalNode(this))
+				if (IsLocal)
 					return true;
 				else
 					return verified;
@@ -314,7 +314,7 @@ namespace FileFind.Meshwork
 					network.AckMethods.Add(m.MessageID, c);
 					network.SendRoutedMessage(m);
 				} catch (Exception ex) {
-					Core.LoggingService.LogError("Failed to create key exchange! Hopefully we will retry...");
+                    Core.LoggingService.LogError("Failed to create key exchange! Hopefully we will retry... " + ex.Message);
 					sentKeyExchange = false;
 					throw ex;
 				}
@@ -465,5 +465,10 @@ namespace FileFind.Meshwork
 				return DestinationManager.GetConnectableDestinations(this.Destinations);
 			}
 		}
+
+        public bool IsLocal
+        {
+            get { return NodeID == Core.MyNodeID; }
+        }
 	}
 }

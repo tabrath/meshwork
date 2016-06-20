@@ -24,6 +24,7 @@ using FileFind.Meshwork.Search;
 using FileFind.Meshwork.Destination;
 using FileFind.Serialization;
 using Meshwork.Logging;
+using System.Reflection;
 
 namespace FileFind.Meshwork.GtkClient
 {
@@ -118,13 +119,13 @@ namespace FileFind.Meshwork.GtkClient
 
 		public override string ClientName {
 			get {
-				return "Title";
+                return Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyTitleAttribute>().Title;
 			}
 		}
 
 		public override string ClientVersion {
 			get {
-				return "Version";
+                return Assembly.GetEntryAssembly().GetName().Version.ToString();
 			}
 		}
 	

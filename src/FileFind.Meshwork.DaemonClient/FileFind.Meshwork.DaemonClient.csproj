@@ -4,7 +4,6 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
     <ProductVersion>10.0.0</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{8CA75664-10AD-4EF3-857A-3FCB556906FA}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>FileFind.Meshwork.DaemonClient</RootNamespace>

@@ -12,7 +12,7 @@ using System.Net;
 
 namespace FileFind.Meshwork.Transport
 {
-	public class OverlayTransport : AbstractTransport
+	/*public class OverlayTransport : AbstractTransport
 	{
 		TransportCallback callback;
 		Node remoteNode;
@@ -127,5 +127,5 @@ namespace FileFind.Meshwork.Transport
 			callback(this);
 			base.transportState = TransportState.Connected;
 		}
-	}
+	}*/
 }

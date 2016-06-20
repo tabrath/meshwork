@@ -51,7 +51,7 @@ namespace FileFind.Meshwork.GtkClient
 				throw new ArgumentNullException("node");
 			}
 
-			if (Core.IsLocalNode(node)) {
+            if (node.IsLocal) {
 				Gui.ShowErrorDialog("You cannot send messages to yourself!");
 				return null;
 			} else if (node.FinishedKeyExchange == true) {

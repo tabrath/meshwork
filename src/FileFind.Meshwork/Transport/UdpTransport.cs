@@ -16,7 +16,7 @@ using System.Security.Cryptography;
 
 namespace FileFind.Meshwork.Transport
 {
-	public class UdpTransport : AbstractTransport, IEncryptedTransport
+	/*public class UdpTransport : AbstractTransport, IEncryptedTransport
 	{
 		IPEndPoint remoteEndPoint;
 		TransportCallback connectCallback;
@@ -226,5 +226,5 @@ namespace FileFind.Meshwork.Transport
 
 			base.RaiseDisconnected (ex);
 		}
-	}
+	}*/
 }

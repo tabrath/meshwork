@@ -211,7 +211,7 @@ namespace FileFind.Meshwork.GtkClient
 		private void network_MemoAdded (Network network, Memo memo)
 		{
 			TreeIter iter = memoTreeStore.AddItem (network, memo);
-			if (Core.IsLocalNode(memo.Node)) {
+            if (memo.Node.IsLocal) {
 				memoList.Selection.SelectIter (iter);
 				memoList.GrabFocus();
 			}

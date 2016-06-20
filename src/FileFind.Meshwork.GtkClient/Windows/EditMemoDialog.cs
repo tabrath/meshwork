@@ -106,7 +106,7 @@ namespace FileFind.Meshwork.GtkClient
 			
 			if (theMemo == null) {
 				foreach (Memo m in network.Memos) {
-					if (m.Subject == subjectEntry.Text & Core.IsLocalNode(m.Node)) {
+                    if (m.Subject == subjectEntry.Text && m.Node.IsLocal) {
 						Gui.ShowMessageDialog ("You have already posted a memo with the specified subject, please select another.",Dialog);
 						return;
 					}

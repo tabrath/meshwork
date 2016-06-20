@@ -68,7 +68,7 @@ namespace FileFind.Meshwork.GtkClient
 		{	
 			if (selectedMemo != null) {
 				mnuViewMemo.Sensitive = true;			
-				if (Core.IsLocalNode(selectedMemo.Node)) {
+                if (selectedMemo.Node.IsLocal) {
 					mnuEditMemo.Sensitive = true;	
 					mnuDeleteMemo.Sensitive = true;
 				} else {	

@@ -27,108 +27,122 @@ using Meshwork.Logging;
 
 namespace FileFind.Meshwork
 {
-	public delegate void MessageInfoEventHandler (MessageInfo info);
-	
-	public delegate string PasswordPromptEventHandler();
-	
-	public static class Core
-	{
-		static List<Network> networks = new List<Network>();
-		static IShareBuilder shareBuilder;
-		static IShareHasher shareHasher;
-		static IShareWatcher shareWatcher;
-		static ITransportManager transportManager;
-		static IFileTransferManager fileTransferManager;
-		static IFileSearchManager fileSearchManager;
-		static ArrayList transportListeners = new ArrayList ();
-		static FileSystemProvider fileSystem;
-		static ISettings settings;
-		static bool loaded = false;
-		static bool started = false;
-		static RSACryptoServiceProvider rsaProvider;
-		static string nodeID;
-		static IAvatarManager avatarManager;
-		static List<PluginInfo> loadedPlugins = new List<PluginInfo>();
-		static IPlatform os;
-		static IDestinationManager destinationManager;
-		static List<FailedTransportListener> failedTransportListeners = new List<FailedTransportListener>();
+    public delegate void MessageInfoEventHandler(MessageInfo info);
+
+    public delegate string PasswordPromptEventHandler();
+
+    public static class Core
+    {
+        static List<Network> networks = new List<Network>();
+        static IShareBuilder shareBuilder;
+        static IShareHasher shareHasher;
+        static IShareWatcher shareWatcher;
+        static ITransportManager transportManager;
+        static IFileTransferManager fileTransferManager;
+        static IFileSearchManager fileSearchManager;
+        static ArrayList transportListeners = new ArrayList();
+        static IFileSystemProvider fileSystem;
+        static ISettings settings;
+        static bool loaded = false;
+        static bool started = false;
+        static RSACryptoServiceProvider rsaProvider;
+        static string nodeID;
+        static IAvatarManager avatarManager;
+        static List<PluginInfo> loadedPlugins = new List<PluginInfo>();
+        static IPlatform os;
+        static IDestinationManager destinationManager;
+        static List<FailedTransportListener> failedTransportListeners = new List<FailedTransportListener>();
 
         public static ILoggingService LoggingService { get; }
 
-		public static event EventHandler Started;
-		public static event EventHandler FinishedLoading;
-		public static event MessageInfoEventHandler MessageReceived;
-		public static event MessageInfoEventHandler MessageSent;
-		public static event NetworkEventHandler NetworkAdded;
-		public static event NetworkEventHandler NetworkRemoved;
-		public static event EventHandler PasswordPrompt;
-		
-		public static readonly int ProtocolVersion = 250;
+        public static event EventHandler Started;
+        public static event EventHandler FinishedLoading;
+        public static event MessageInfoEventHandler MessageReceived;
+        public static event MessageInfoEventHandler MessageSent;
+        public static event NetworkEventHandler NetworkAdded;
+        public static event NetworkEventHandler NetworkRemoved;
+        public static event EventHandler PasswordPrompt;
+
+        public static readonly int ProtocolVersion = 250;
         public static CompositionContainer Container { get; }
         private static readonly AggregateCatalog catalog;
 
-		static Core ()
-		{
+        static Core()
+        {
             catalog = new AggregateCatalog(new AssemblyCatalog(typeof(Core).Assembly));
             Container = new CompositionContainer(catalog);
 
             LoggingService = Container.GetExportedValue<ILoggingService>();
 
-			if (Environment.OSVersion.Platform == PlatformID.Unix) {
-				if (Common.OSName == "Linux") {
-					Core.OS = new LinuxPlatform();
-				} else if (Common.OSName == "Darwin") {
-					Core.OS = new OSXPlatform();
-				} else {
-					throw new Exception(String.Format("Unsupported operating system: {0}", Common.OSName));
-				}
-			} else {
-				Core.OS = new WindowsPlatform();
-			}
-		}
+            if (Environment.OSVersion.Platform == PlatformID.Unix)
+            {
+                if (Common.OSName == "Linux")
+                {
+                    Core.OS = new LinuxPlatform();
+                }
+                else if (Common.OSName == "Darwin")
+                {
+                    Core.OS = new OSXPlatform();
+                }
+                else {
+                    throw new Exception(String.Format("Unsupported operating system: {0}", Common.OSName));
+                }
+            }
+            else {
+                Core.OS = new WindowsPlatform();
+            }
+        }
 
-		public static bool Init (ISettings settings)
-		{
-			if (loaded == true) {
-				throw new Exception ("Please only call this method once.");
-			}
+        public static bool Init(ISettings settings)
+        {
+            if (loaded == true)
+            {
+                throw new Exception("Please only call this method once.");
+            }
 
-			if (settings == null) {
-				throw new ArgumentNullException("settings");
-			}
+            if (settings == null)
+            {
+                throw new ArgumentNullException("settings");
+            }
 
-			Core.Settings = settings;
-			
-			string pidFilePath = Path.Combine(Core.Settings.DataPath, "meshwork.pid");
-			if (File.Exists(pidFilePath)) {
-				int processId = -1;
-				Int32.TryParse(File.ReadAllText(pidFilePath), out processId);
-				try {
-					Process.GetProcessById(processId);
-					Console.Error.WriteLine("Meshwork is already running (PID {0})!", processId);
-					return false;
-				} catch (ArgumentException) {
-					File.Delete(pidFilePath);
-				}
-			}
-			File.WriteAllText(pidFilePath, Process.GetCurrentProcess().Id.ToString());
-			
-			if (settings.KeyEncrypted) {
-				PasswordPrompt(null, EventArgs.Empty);
-				if (!settings.KeyUnlocked) {
-					// Quit!
-					return false;
-				}	
-			}			
-			
-			rsaProvider = new RSACryptoServiceProvider();			
-			rsaProvider.ImportParameters(settings.EncryptionParameters);
-			nodeID = Common.SHA512Str(rsaProvider.ToXmlString(false));
+            Core.Settings = settings;
 
-			fileSystem = new FileSystemProvider();
+            string pidFilePath = Path.Combine(Core.Settings.DataPath, "meshwork.pid");
+            if (File.Exists(pidFilePath))
+            {
+                int processId = -1;
+                Int32.TryParse(File.ReadAllText(pidFilePath), out processId);
+                try
+                {
+                    Process.GetProcessById(processId);
+                    Console.Error.WriteLine("Meshwork is already running (PID {0})!", processId);
+                    return false;
+                }
+                catch (ArgumentException)
+                {
+                    File.Delete(pidFilePath);
+                }
+            }
+            File.WriteAllText(pidFilePath, Process.GetCurrentProcess().Id.ToString());
+
+            if (settings.KeyEncrypted)
+            {
+                PasswordPrompt(null, EventArgs.Empty);
+                if (!settings.KeyUnlocked)
+                {
+                    // Quit!
+                    return false;
+                }
+            }
+
+            rsaProvider = new RSACryptoServiceProvider();
+            rsaProvider.ImportParameters(settings.EncryptionParameters);
+            nodeID = Common.SHA512Str(rsaProvider.ToXmlString(false));
+
+            fileSystem = Container.GetExportedValue<IFileSystemProvider>();
 
             shareBuilder = Container.GetExportedValue<IShareBuilder>();
-			shareBuilder.FinishedIndexing += ShareBuilder_FinishedIndexing;
+            shareBuilder.FinishedIndexing += ShareBuilder_FinishedIndexing;
 
             shareWatcher = Container.GetExportedValue<IShareWatcher>();
             shareHasher = Container.GetExportedValue<IShareHasher>();
@@ -137,451 +151,515 @@ namespace FileFind.Meshwork
             fileSearchManager = Container.GetExportedValue<IFileSearchManager>();
             destinationManager = Container.GetExportedValue<IDestinationManager>();
 
-			// XXX: Use reflection to load these:
-			destinationManager.RegisterSource(new TCPIPv4DestinationSource());
-			destinationManager.RegisterSource(new TCPIPv6DestinationSource());
+            // XXX: Use reflection to load these:
+            destinationManager.RegisterSource(new TCPIPv4DestinationSource());
+            destinationManager.RegisterSource(new TCPIPv6DestinationSource());
 
-			MonoTorrent.Client.Tracker.TrackerFactory.Register("meshwork", typeof(MeshworkTracker));
+            MonoTorrent.Client.Tracker.TrackerFactory.Register("meshwork", typeof(MeshworkTracker));
 
-			ITransportListener tcpListener = new TcpTransportListener(Core.Settings.TcpListenPort);
-			transportListeners.Add(tcpListener);
-			
-			loaded = true;
+            ITransportListener tcpListener = new TcpTransportListener(Core.Settings.TcpListenPort);
+            transportListeners.Add(tcpListener);
 
-			if (FinishedLoading != null) {
-				FinishedLoading(null, EventArgs.Empty);
-			}
-			
-			return true;
-		}
+            loaded = true;
 
-		public static void Start ()
-		{
-			if (!loaded) {
-				throw new InvalidOperationException("Call Init() First!");
-			}
+            if (FinishedLoading != null)
+            {
+                FinishedLoading(null, EventArgs.Empty);
+            }
 
-			if (started) {
-				throw new InvalidOperationException("You already called Start()!");
-			}
-			
-			foreach (NetworkInfo networkInfo in settings.Networks) {
-				AddNetwork(networkInfo);
-			}
-			
-			foreach (ITransportListener listener in transportListeners) {
-				try {
-					listener.StartListening();
-				} catch (Exception ex) {
-					LoggingService.LogError(String.Format("Listener failed to start: {0}", listener.ToString()), ex);
-					failedTransportListeners.Add(new FailedTransportListener(listener, ex));
-				}
-			}
+            return true;
+        }
 
-			shareHasher.Start();			
-			RescanSharedDirectories();
-			
-			// XXX: This is blocking ! shareWatcher.Start();
+        public static void Start()
+        {
+            if (!loaded)
+            {
+                throw new InvalidOperationException("Call Init() First!");
+            }
 
-			started = true;
+            if (started)
+            {
+                throw new InvalidOperationException("You already called Start()!");
+            }
 
-			if (Started != null) {
-				Started(null, EventArgs.Empty);
-			}
-		}
+            foreach (NetworkInfo networkInfo in settings.Networks)
+            {
+                AddNetwork(networkInfo);
+            }
 
-		public static FileSystemProvider FileSystem {
-			get {
-				return fileSystem;
-			}
-		}
+            foreach (ITransportListener listener in transportListeners)
+            {
+                try
+                {
+                    listener.StartListening();
+                }
+                catch (Exception ex)
+                {
+                    LoggingService.LogError(String.Format("Listener failed to start: {0}", listener.ToString()), ex);
+                    failedTransportListeners.Add(new FailedTransportListener(listener, ex));
+                }
+            }
 
-		public static MyDirectory MyDirectory {
-			get {
-				return FileSystem.RootDirectory.MyDirectory;
-			}
-		}
+            shareHasher.Start();
+            RescanSharedDirectories();
 
-		public static string MyNodeID {
-			get {
-				if (nodeID == null) {
-					throw new InvalidOperationException();
-				}
-				return nodeID;
-			}
-		}
+            // XXX: This is blocking ! shareWatcher.Start();
 
-		public static IFileSearchManager FileSearchManager {
-			get {
-				return fileSearchManager;
-			}
-		}
+            started = true;
 
-		public static IAvatarManager AvatarManager {
-			get {
-				return avatarManager;
-			}
-			set {
-				avatarManager = value;
-			}
-		}
+            if (Started != null)
+            {
+                Started(null, EventArgs.Empty);
+            }
+        }
 
-		public static IDestinationManager DestinationManager {
-			get {
-				return destinationManager;
-			}
-		}
+        public static IFileSystemProvider FileSystem
+        {
+            get
+            {
+                return fileSystem;
+            }
+        }
 
-		public static IPlatform OS {
-			get {
-				return os;
-			}
-			set {
-				os = value;
-			}
-		}
-	
-		internal static RSACryptoServiceProvider CryptoProvider {
-			get {
-				return rsaProvider;
-			}
-		}
+        public static MyDirectory MyDirectory
+        {
+            get
+            {
+                return FileSystem.RootDirectory.MyDirectory;
+            }
+        }
 
-		public static IShareHasher ShareHasher {
-			get {
-				return shareHasher;
-			}
-		}
+        public static string MyNodeID
+        {
+            get
+            {
+                if (nodeID == null)
+                {
+                    throw new InvalidOperationException();
+                }
+                return nodeID;
+            }
+        }
 
-		public static IShareBuilder ShareBuilder {
-			get {
-				return shareBuilder;
-			}
-		}
+        public static IFileSearchManager FileSearchManager
+        {
+            get
+            {
+                return fileSearchManager;
+            }
+        }
 
-		public static bool IsLocalNode (Node node)
+        public static IAvatarManager AvatarManager
+        {
+            get
+            {
+                return avatarManager;
+            }
+            set
+            {
+                avatarManager = value;
+            }
+        }
+
+        public static IDestinationManager DestinationManager
+        {
+            get
+            {
+                return destinationManager;
+            }
+        }
+
+        public static IPlatform OS
+        {
+            get
+            {
+                return os;
+            }
+            set
+            {
+                os = value;
+            }
+        }
+
+        internal static RSACryptoServiceProvider CryptoProvider
+        {
+            get
+            {
+                return rsaProvider;
+            }
+        }
+
+        public static IShareHasher ShareHasher
+        {
+            get
+            {
+                return shareHasher;
+            }
+        }
+
+        public static IShareBuilder ShareBuilder
+        {
+            get
+            {
+                return shareBuilder;
+            }
+        }
+
+        /*public static bool IsLocalNode (Node node)
 		{
 			return (node.NodeID == Core.MyNodeID);
-		}
+		}*/
 
-		internal static Node CreateLocalNode (Network network)
-		{
-			if (!loaded) {
-				throw new InvalidOperationException("You must call Init() first");
-			}
-			
-			Node node = new Node(network, Core.MyNodeID);
-			node.NickName     = Core.Settings.NickName;
-			node.RealName     = Core.Settings.RealName;
-			node.Email        = Core.Settings.Email;
-			node.Verified     = true;
+        public static PluginInfo[] Plugins
+        {
+            get
+            {
+                return loadedPlugins.ToArray();
+            }
+        }
 
-			// XXX: This is a mess. Perhaps the client should register it's name and version with Core on Init.
-			object[] attrs = Assembly.GetEntryAssembly().GetCustomAttributes(typeof(AssemblyTitleAttribute), true);
-			if (attrs.Length > 0) {
-				AssemblyTitleAttribute attr = (AssemblyTitleAttribute)attrs[0];
-				AssemblyName asmName = Assembly.GetEntryAssembly().GetName();
-				node.ClientName    = attr.Title;
-				node.ClientVersion = asmName.Version.ToString();
-			} else {
-				node.ClientName = "Unknown";
-				node.ClientVersion = "Unknown";
-			}
+        public static void Stop()
+        {
+            if (!loaded) return;
 
-			node.OperatingSystem = Core.OS.VersionInfo;
-			return node;
-		}
+            shareBuilder.Stop();
 
-		public static PluginInfo[] Plugins {
-			get {
-				return loadedPlugins.ToArray();
-			}
-		}
+            shareHasher.Stop();
+            shareWatcher.Stop();
 
-		public static void Stop ()
-		{
-			if (!loaded) return;
+            foreach (ITransportListener listener in transportListeners)
+            {
+                listener.StopListening();
+            }
 
-			shareBuilder.Stop();
+            foreach (ITransport transport in TransportManager.Transports)
+            {
+                transport.Disconnect();
+            }
+        }
 
-			shareHasher.Stop();
-			shareWatcher.Stop();
+        public static void LoadPlugin(string fileName)
+        {
+            try
+            {
+                if (fileName == null)
+                {
+                    throw new ArgumentNullException("fileName");
+                }
 
-			foreach (ITransportListener listener in transportListeners) {
-				listener.StopListening ();
-			}
+                PluginInfo info = new PluginInfo(fileName);
 
-			foreach (ITransport transport in TransportManager.Transports) {
-				transport.Disconnect();
-			}
-		}
+                foreach (PluginInfo cInfo in loadedPlugins)
+                {
+                    if (cInfo.Type == info.Type)
+                    {
+                        throw new Exception("Plugin already loaded.");
+                    }
+                }
 
-		public static void LoadPlugin (string fileName)
-		{
-			try {
-				if (fileName == null) {
-					throw new ArgumentNullException ("fileName");
-				}
+                info.CreateInstance();
+                loadedPlugins.Add(info);
+            }
+            catch (Exception ex)
+            {
+                LoggingService.LogError("Failed to load plugin", ex);
+            }
+        }
 
-				PluginInfo info = new PluginInfo (fileName);
+        public static void UnloadPlugin(PluginInfo info)
+        {
+            if (info == null)
+            {
+                throw new ArgumentNullException("info");
+            }
 
-				foreach (PluginInfo cInfo in loadedPlugins) {
-					if (cInfo.Type == info.Type) {
-						throw new Exception ("Plugin already loaded.");
-					}
-				}
+            info.DestroyInstance();
+            loadedPlugins.Remove(info);
+        }
 
-				info.CreateInstance();
-				loadedPlugins.Add(info);
-			} catch (Exception ex) {
-				LoggingService.LogError("Failed to load plugin", ex);
-			}
-		}
+        private static void ShareBuilder_FinishedIndexing(object sender, EventArgs args)
+        {
+            try
+            {
+                Core.FileSystem.InvalidateCache();
 
-		public static void UnloadPlugin (PluginInfo info)
-		{
-			if (info == null) {
-				throw new ArgumentNullException ("info");
-			}
+                foreach (Network network in networks)
+                {
+                    network.SendInfoToTrustedNodes();
+                }
 
-			info.DestroyInstance();
-			loadedPlugins.Remove (info);
-		}
+            }
+            catch (Exception ex)
+            {
+                LoggingService.LogError(ex);
+            }
+        }
 
-		private static void ShareBuilder_FinishedIndexing (object sender, EventArgs args)
-		{
-			try {
-				Core.FileSystem.InvalidateCache();
+        private static void AddNetwork(NetworkInfo networkInfo)
+        {
+            foreach (Network thisNetwork in networks)
+            {
+                if (thisNetwork.NetworkID == networkInfo.NetworkID)
+                {
+                    throw new Exception("That network has already been added.");
+                }
+            }
 
-				foreach (Network network in networks) {
-					network.SendInfoToTrustedNodes();
-				}
+            Network network = Network.FromNetworkInfo(networkInfo);
 
-			} catch (Exception ex) {
-				LoggingService.LogError(ex);
-			}
-		}
+            networks.Add(network);
 
-		private static void AddNetwork (NetworkInfo networkInfo)
-		{
-			foreach (Network thisNetwork in networks) {
-				if (thisNetwork.NetworkID == networkInfo.NetworkID) {
-					throw new Exception("That network has already been added.");
-				}
-			}
-
-			Network network = Network.FromNetworkInfo(networkInfo);
-
-			networks.Add(network);
-
-			/*
+            /*
 			if (!fileSystem.RootDirectory.HasSubdirectory(network.NetworkID)) {
 				Directory directory = fileSystem.RootDirectory.CreateSubdirectory(network.NetworkID);
 				directory.Requested = true;
 			}
 			*/
-			
-			if (NetworkAdded != null) {
-				NetworkAdded (network);
-			}
-			network.Start ();
-		}
 
-		private static void RemoveNetwork (Network network)
-		{
-			network.Stop();
+            if (NetworkAdded != null)
+            {
+                NetworkAdded(network);
+            }
+            network.Start();
+        }
 
-			networks.Remove(network);
+        private static void RemoveNetwork(Network network)
+        {
+            network.Stop();
 
-			if (NetworkRemoved != null) {
-				NetworkRemoved(network);
-			}
-		}
-		
-		public static Network GetNetwork (string networkID)
-		{
-			foreach (Network network in networks) {
-				if (network.NetworkID == networkID) {
-					return network;
-				}
-			}
-			return null;
-		}
+            networks.Remove(network);
 
-		internal static void ConnectTo (ITransport transport, TransportCallback connectCallback)
-		{
-			if (transport == null) {
-				throw new ArgumentNullException("transport");
-			}
+            if (NetworkRemoved != null)
+            {
+                NetworkRemoved(network);
+            }
+        }
 
-			if (transport.Network == null) {
-				throw new ArgumentNullException("transport.Network");
-			}
+        public static Network GetNetwork(string networkID)
+        {
+            foreach (Network network in networks)
+            {
+                if (network.NetworkID == networkID)
+                {
+                    return network;
+                }
+            }
+            return null;
+        }
 
-			if (transport.ConnectionType == ConnectionType.NodeConnection) {
-				// XXX: This doesn't belong here. Have LocalNodeConnection set this up
-				// and call me with the proper callback.
-				LocalNodeConnection connection = new LocalNodeConnection(transport);
-				transport.Operation = connection;
-				transport.Network.AddConnection(connection);
-				transportManager.Add(transport, delegate (ITransport bleh) { 
-					connection.Start();
-					if (connectCallback != null) {
-						connectCallback(transport);
-					}
-				});
-			} else {
-				transportManager.Add (transport, connectCallback);
-			}
-		}
+        internal static void ConnectTo(ITransport transport, TransportCallback connectCallback)
+        {
+            if (transport == null)
+            {
+                throw new ArgumentNullException("transport");
+            }
 
-		public static int CountTransports (ulong connectionType)
-		{
-			int result = 0;
-			foreach (ITransport transport in transportManager.Transports) {
-				if (transport.ConnectionType == connectionType) {
-					result++;
-				}
-			}
-			return result;
-		}
+            if (transport.Network == null)
+            {
+                throw new ArgumentNullException("transport.Network");
+            }
 
-		public static ITransportManager TransportManager {
-			get {
-				return transportManager;
-			}
-		}
+            if (transport.ConnectionType == ConnectionType.NodeConnection)
+            {
+                // XXX: This doesn't belong here. Have LocalNodeConnection set this up
+                // and call me with the proper callback.
+                LocalNodeConnection connection = new LocalNodeConnection(transport);
+                transport.Operation = connection;
+                transport.Network.AddConnection(connection);
+                transportManager.Add(transport, delegate (ITransport bleh)
+                {
+                    connection.Start();
+                    if (connectCallback != null)
+                    {
+                        connectCallback(transport);
+                    }
+                });
+            }
+            else {
+                transportManager.Add(transport, connectCallback);
+            }
+        }
 
-		public static IFileTransferManager FileTransferManager {
-			get {
-				return fileTransferManager;
-			}
-		}
+        public static int CountTransports(ulong connectionType)
+        {
+            int result = 0;
+            foreach (ITransport transport in transportManager.Transports)
+            {
+                if (transport.ConnectionType == connectionType)
+                {
+                    result++;
+                }
+            }
+            return result;
+        }
 
-		public static Network[] Networks {
-			get {
-				return networks.ToArray ();
-			}
-		}
+        public static ITransportManager TransportManager
+        {
+            get
+            {
+                return transportManager;
+            }
+        }
 
-		public static void RescanSharedDirectories ()
-		{
-			if (shareBuilder.Going == true) {
-				LoggingService.LogDebug("Starting scan over!!");
-				shareBuilder.Stop();
-			}
+        public static IFileTransferManager FileTransferManager
+        {
+            get
+            {
+                return fileTransferManager;
+            }
+        }
 
-			shareBuilder.Start();
-		}
-		
-		public static void RaiseMessageSent (MessageInfo info)
-		{
-			if (MessageReceived != null) {
-				MessageSent(info);
-			}
-		}
+        public static Network[] Networks
+        {
+            get
+            {
+                return networks.ToArray();
+            }
+        }
 
-		public static void RaiseMessageReceived (MessageInfo info)
-		{
-			if (MessageReceived != null) {
-				MessageReceived(info);
-			}
-		}
+        public static void RescanSharedDirectories()
+        {
+            if (shareBuilder.Going == true)
+            {
+                LoggingService.LogDebug("Starting scan over!!");
+                shareBuilder.Stop();
+            }
 
-		public static FailedTransportListener[] FailedTransportListeners {
-			get {
-				return failedTransportListeners.ToArray();
-			}
-		}
+            shareBuilder.Start();
+        }
 
-		public static ISettings Settings {
-			get {
-				return settings;
-			}
-			set {
-				if (value == null) {
-					throw new ArgumentNullException("value");
-				}
-				
-				if (settings != null) 
-					throw new InvalidOperationException("Settings already set!");
+        public static void RaiseMessageSent(MessageInfo info)
+        {
+            if (MessageReceived != null)
+            {
+                MessageSent(info);
+            }
+        }
 
-				settings = value;				
-				
-				ReloadSettings();
-			}
-		}
-		
-		public static void ReloadSettings ()
-		{				
-			if (settings.Plugins != null) {
-				foreach (string fileName in settings.Plugins) {
-					LoadPlugin (fileName);
-				}
-			}
-			
-			if (Core.DestinationManager != null) {
-				Core.DestinationManager.SyncFromSettings();
-			}
+        public static void RaiseMessageReceived(MessageInfo info)
+        {
+            if (MessageReceived != null)
+            {
+                MessageReceived(info);
+            }
+        }
 
-			// Update listeners
-			foreach (ITransportListener listener in transportListeners) {
-				if (listener is TcpTransportListener) {
-					((TcpTransportListener)listener).Port = settings.TcpListenPort;
-				}
-			}
-			
-			if (!started)
-				return;
+        public static FailedTransportListener[] FailedTransportListeners
+        {
+            get
+            {
+                return failedTransportListeners.ToArray();
+            }
+        }
 
-			// Update file transfer options
-			if (settings.EnableGlobalDownloadSpeedLimit) {
-				FileTransferManager.Provider.GlobalDownloadSpeedLimit = settings.GlobalDownloadSpeedLimit * 1024;
-			} else {
-				FileTransferManager.Provider.GlobalDownloadSpeedLimit = 0;
-			}
+        public static ISettings Settings
+        {
+            get
+            {
+                return settings;
+            }
+            set
+            {
+                if (value == null)
+                {
+                    throw new ArgumentNullException("value");
+                }
 
-			if (settings.EnableGlobalUploadSpeedLimit) {
-				FileTransferManager.Provider.GlobalUploadSpeedLimit = settings.GlobalUploadSpeedLimit * 1024;
-			} else {
-				FileTransferManager.Provider.GlobalUploadSpeedLimit = 0;
-			}
-			
-			// Update/remove networks.
-			foreach (Network network in Networks) {
-				string oldNick = network.LocalNode.NickName;
-				network.LocalNode.NickName = settings.NickName;
-				network.LocalNode.RealName = settings.RealName;
-				network.LocalNode.Email = settings.Email;
+                if (settings != null)
+                    throw new InvalidOperationException("Settings already set!");
 
-				bool foundNetwork = false;
-				
-				foreach (NetworkInfo networkInfo in settings.Networks) {
-					if (networkInfo.NetworkID == network.NetworkID) {
-						network.UpdateTrustedNodes(networkInfo.TrustedNodes);
-						foundNetwork = true;
-						break;
-					}
-				}
+                settings = value;
 
-				if (!foundNetwork) {
-					// Actually, this network was removed!
-					Core.RemoveNetwork(network);
-				} else {
-					network.SendInfoToTrustedNodes();
-					network.RaiseUpdateNodeInfo(oldNick, network.LocalNode);
-					network.AutoconnectManager.ConnectionCount = settings.AutoConnectCount;
-				}
-			}
+                ReloadSettings();
+            }
+        }
 
-			// Add new networks
-			foreach (NetworkInfo networkInfo in settings.Networks) {
-				if (GetNetwork(networkInfo.NetworkID) == null) {
-					AddNetwork(networkInfo);
-				}
-			}
+        public static void ReloadSettings()
+        {
+            if (settings.Plugins != null)
+            {
+                foreach (string fileName in settings.Plugins)
+                {
+                    LoadPlugin(fileName);
+                }
+            }
 
-			RescanSharedDirectories();
-		}
-	}
+            if (Core.DestinationManager != null)
+            {
+                Core.DestinationManager.SyncFromSettings();
+            }
+
+            // Update listeners
+            foreach (ITransportListener listener in transportListeners)
+            {
+                if (listener is TcpTransportListener)
+                {
+                    ((TcpTransportListener)listener).Port = settings.TcpListenPort;
+                }
+            }
+
+            if (!started)
+                return;
+
+            // Update file transfer options
+            if (settings.EnableGlobalDownloadSpeedLimit)
+            {
+                FileTransferManager.Provider.GlobalDownloadSpeedLimit = settings.GlobalDownloadSpeedLimit * 1024;
+            }
+            else {
+                FileTransferManager.Provider.GlobalDownloadSpeedLimit = 0;
+            }
+
+            if (settings.EnableGlobalUploadSpeedLimit)
+            {
+                FileTransferManager.Provider.GlobalUploadSpeedLimit = settings.GlobalUploadSpeedLimit * 1024;
+            }
+            else {
+                FileTransferManager.Provider.GlobalUploadSpeedLimit = 0;
+            }
+
+            // Update/remove networks.
+            foreach (Network network in Networks)
+            {
+                string oldNick = network.LocalNode.NickName;
+                network.LocalNode.NickName = settings.NickName;
+                network.LocalNode.RealName = settings.RealName;
+                network.LocalNode.Email = settings.Email;
+
+                bool foundNetwork = false;
+
+                foreach (NetworkInfo networkInfo in settings.Networks)
+                {
+                    if (networkInfo.NetworkID == network.NetworkID)
+                    {
+                        network.UpdateTrustedNodes(networkInfo.TrustedNodes);
+                        foundNetwork = true;
+                        break;
+                    }
+                }
+
+                if (!foundNetwork)
+                {
+                    // Actually, this network was removed!
+                    Core.RemoveNetwork(network);
+                }
+                else {
+                    network.SendInfoToTrustedNodes();
+                    network.RaiseUpdateNodeInfo(oldNick, network.LocalNode);
+                    network.AutoconnectManager.ConnectionCount = settings.AutoConnectCount;
+                }
+            }
+
+            // Add new networks
+            foreach (NetworkInfo networkInfo in settings.Networks)
+            {
+                if (GetNetwork(networkInfo.NetworkID) == null)
+                {
+                    AddNetwork(networkInfo);
+                }
+            }
+
+            RescanSharedDirectories();
+        }
+    }
 }

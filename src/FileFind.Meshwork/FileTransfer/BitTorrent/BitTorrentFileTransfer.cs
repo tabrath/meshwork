@@ -395,7 +395,7 @@ namespace FileFind.Meshwork.FileTransfer.BitTorrent
                 BitTorrentFileTransferPeer peer;
                 lock (this.peers)
                 {
-                    peer = this.peers.Cast<BitTorrentFileTransferPeer>().SingleOrDefault(p => p.Node.NodeID == args.PeerID.Uri.AbsolutePath);
+                    peer = this.peers.OfType<BitTorrentFileTransferPeer>().SingleOrDefault(p => p.Node.NodeID == args.PeerID.Uri.AbsolutePath);
                 }
                 if (peer == null)
                     throw new Exception("Unexpected peer!!!! - " + args.PeerID.Uri.ToString());
@@ -423,7 +423,7 @@ namespace FileFind.Meshwork.FileTransfer.BitTorrent
                 BitTorrentFileTransferPeer peer;
                 lock (this.peers)
                 {
-                    peer = this.peers.Cast<BitTorrentFileTransferPeer>().SingleOrDefault(p => p.Node.NodeID == args.PeerID.Uri.AbsolutePath);
+                    peer = this.peers.OfType<BitTorrentFileTransferPeer>().SingleOrDefault(p => p.Node.NodeID == args.PeerID.Uri.AbsolutePath);
                     if (peer != null)
                     {
                         this.peers.Remove(peer);
@@ -498,7 +498,7 @@ namespace FileFind.Meshwork.FileTransfer.BitTorrent
 
 						lock (this.peers)
                         {
-                            if (!this.peers.Cast<BitTorrentFileTransferPeer>().Any(ConnectToPeer))
+                            if (!this.peers.OfType<BitTorrentFileTransferPeer>().Any(ConnectToPeer))
                             {
                                 StatusDetail = "Unable to connect to any peers";
                                 Cancel();
@@ -524,7 +524,7 @@ namespace FileFind.Meshwork.FileTransfer.BitTorrent
 						}
 					}
 
-                    if (this.peers.Cast<BitTorrentFileTransferPeer>().Any(p => p == null || !p.Peer.IsSeeder))
+                    if (this.peers.OfType<BitTorrentFileTransferPeer>().Any(p => p == null || !p.Peer.IsSeeder))
                         return;
 					
                     if (this.manager == null || !this.manager.Progress.Equals(100))

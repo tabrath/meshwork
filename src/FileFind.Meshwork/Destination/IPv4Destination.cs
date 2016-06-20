@@ -61,7 +61,7 @@ namespace FileFind.Meshwork.Destination
 	
 		private InterfaceAddress FindInterfaceWithIP(IPAddress ip)
 		{
-            var address = Core.OS.GetInterfaceAddresses().SingleOrDefault(x => x.Equals(ip));
+            var address = Core.OS.GetInterfaceAddresses().SingleOrDefault(x => x.Address.Equals(ip));
             if (address == null)
                 throw new Exception("No interface found with address " + ip.ToString());
 

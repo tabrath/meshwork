@@ -4,7 +4,6 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{99AE14A8-0C36-4F49-AEA8-567A7443CB37}</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>Meshwork.Stun</RootNamespace>

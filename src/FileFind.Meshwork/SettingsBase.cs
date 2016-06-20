@@ -391,7 +391,7 @@ namespace FileFind.Meshwork
 						
 						info.Memos.Clear();
 						foreach (Memo memo in network.Memos) {
-							if (Core.IsLocalNode(memo.Node)) {
+                            if (memo.Node.IsLocal) {
 								var memoInfo = new MemoInfo(memo);
 								memoInfo.FromNodeID = null;
 								info.Memos.Add(memoInfo);

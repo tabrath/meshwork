@@ -51,7 +51,7 @@ namespace FileFind.Meshwork.GtkClient
 			eventbox2.ModifyBg(StateType.Normal, new Gdk.Color(0xff,0xff,0xff));
 
 			if (!memo.Network.TrustedNodes.ContainsKey(memo.Node.NodeID)) {
-				if (Core.IsLocalNode(memo.Node)) {
+                if (memo.Node.IsLocal) {
 					alignmentSignatureInfo.Visible = false;
 				} else {
 					lblSignatureStatus.Markup = "<b>Unable to verify digital signature (Node not trusted)</b>";

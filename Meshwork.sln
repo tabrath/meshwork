@@ -1,5 +1,5 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
+Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2010
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{1A608B70-0FB1-4779-9994-699614659E43}"
 EndProject
@@ -321,6 +321,11 @@ Global
 		$27.IncludeStaticEntities = True
 		$0.VersionControlPolicy = $29
 		$29.inheritsSet = Mono
+		$0.ChangeLogPolicy = $32
+		$32.UpdateMode = None
+		$32.MessageStyle = $33
+		$33.LineAlign = 0
+		$32.inheritsSet = Mono
 		version = 0.2
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution

@@ -308,12 +308,7 @@ namespace FileFind.Meshwork
 				rooms.Add(roomInfo);
 			}
 
-			foreach (Memo currentMemo in network.Memos) {
-				if (Core.IsLocalNode(currentMemo.Node)) {
-					MemoInfo info = new MemoInfo(currentMemo);
-					memos.Add(info);
-				}
-			}
+            memos.AddRange(network.Memos.Where(m => m.Node.IsLocal).Select(m => new MemoInfo(m)));
 
 			nodeInfo.KnownConnections = connections.ToArray();
 			nodeInfo.KnownChatRooms = rooms.ToArray();

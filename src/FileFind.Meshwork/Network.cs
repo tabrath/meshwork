@@ -184,7 +184,7 @@ namespace FileFind.Meshwork
 			this.networkName = networkName;
 			this.networkId = Common.SHA512Str(networkName);
 
-			localNode = Core.CreateLocalNode(this);
+			localNode = CreateLocalNode();
 			AddNode(localNode);
 			
 			connections = new NodeConnectionCollection(this);
@@ -194,6 +194,20 @@ namespace FileFind.Meshwork
 			
 			directory = new NetworkDirectory(this);
 		}
+
+        private Node CreateLocalNode()
+        {
+            return new Node(this, Core.MyNodeID)
+            {
+                NickName = Core.Settings.NickName,
+                RealName = Core.Settings.RealName,
+                Email = Core.Settings.Email,
+                ClientName = Core.Settings.ClientName,
+                ClientVersion = Core.Settings.ClientVersion,
+                OperatingSystem = Core.OS.VersionInfo,
+                Verified = true
+            };
+        }
 
 		public string NetworkName {
 			get {
@@ -893,7 +907,7 @@ namespace FileFind.Meshwork
 
 		public void DeleteMemo(Memo m)
 		{
-			if (Core.IsLocalNode(m.Node)) {
+            if (m.Node.IsLocal) {
 				RemoveMemo(m);
 				SendBroadcast(MessageBuilder.CreateDelMemoMessage(m), LocalNode);
 			} else {

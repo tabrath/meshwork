@@ -3,7 +3,6 @@
   <PropertyGroup>
     <ProjectType>Local</ProjectType>
     <ProductVersion>9.0.30729</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{261A1AF5-01A7-4C09-AA0E-345B5DE1E888}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
@@ -38,7 +37,7 @@
     <Optimize>false</Optimize>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <OutputPath>bin\x86\Release\</OutputPath>
+    <OutputPath>..\..\build</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <BaseAddress>285212672</BaseAddress>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -114,7 +113,6 @@
     <Compile Include="TrustedNodeInfo.cs" />
     <Compile Include="Encryption.cs" />
     <Compile Include="EndianBitConverter.cs" />
-    <Compile Include="EventArgs.cs" />
     <Compile Include="NearbyNode.cs" />
     <Compile Include="NetworkInfo.cs" />
     <Compile Include="Validator.cs" />
@@ -224,23 +222,18 @@
     <Compile Include="Search\SearchResultsEventArgs.cs" />
     <Compile Include="Logging\LoggingServiceExtensions.cs" />
     <Compile Include="Logging\ILoggingService.cs" />
+    <Compile Include="ErrorEventArgs.cs" />
+    <Compile Include="FilenameEventArgs.cs" />
+    <Compile Include="ReceivedKeyEventArgs.cs" />
+    <Compile Include="ChatEventArgs.cs" />
+    <Compile Include="SearchResultInfoEventArgs.cs" />
+    <Compile Include="Transport\OverlayTransport.cs" />
+    <Compile Include="Transport\UdpTransport.cs" />
+    <Compile Include="Filesystem\IFileSystemProvider.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ProjectExtensions>
     <VisualStudio />
-    <MonoDevelop>
-      <Properties>
-        <MonoDevelop.Autotools.MakefileInfo RelativeMakefileName="Makefile.am" IsAutotoolsProject="true" RelativeConfigureInPath="../..">
-          <BuildFilesVar Sync="true" Name="FILES" />
-          <DeployFilesVar />
-          <ResourcesVar />
-          <OthersVar />
-          <GacRefVar Name="REFERENCES" Prefix="-r:" />
-          <AsmRefVar Name="REFERENCES" Prefix="-r:" />
-          <ProjectRefVar Name="REFERENCES" Prefix="-r:" />
-        </MonoDevelop.Autotools.MakefileInfo>
-      </Properties>
-    </MonoDevelop>
   </ProjectExtensions>
   <ItemGroup />
   <ItemGroup>

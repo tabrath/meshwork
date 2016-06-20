@@ -35,8 +35,8 @@ namespace FileFind.Meshwork
     {
         // Keeps track of worker threads and what their current task is, if any.
         private readonly ConcurrentDictionary<Thread, TaskCompletionSource<bool>> threads;
-        private readonly BlockingCollection<TaskCompletionSource<bool>> queue;
-        private readonly CancellationTokenSource cancellation;
+        private BlockingCollection<TaskCompletionSource<bool>> queue;
+        private CancellationTokenSource cancellation;
         private readonly int threadCount;
         private readonly ILoggingService loggingService;
 
@@ -111,14 +111,14 @@ namespace FileFind.Meshwork
         {
             if (this.cancellation != null)
             {
-                this.cancellation.Cancel();
                 this.cancellation.Dispose();
+                this.cancellation = null;
             }
 
             if (this.queue != null)
             {
-                this.queue.CompleteAdding();
                 this.queue.Dispose();
+                this.queue = null;
             }
 
             foreach (Thread thread in threads.Keys)

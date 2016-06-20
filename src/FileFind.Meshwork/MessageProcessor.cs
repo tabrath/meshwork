@@ -422,7 +422,7 @@ namespace FileFind.Meshwork
 		{
 			Memo memo = new Memo (network, memoInfo);
 
-			if (!Core.IsLocalNode(memo.Node)) {
+            if (!memo.Node.IsLocal) {
 				if (network.TrustedNodes.ContainsKey(memo.Node.NodeID) && memo.Verify() == false) {
 					Core.LoggingService.LogWarning("Ignored a memo with an invalid signature!");
 					return;

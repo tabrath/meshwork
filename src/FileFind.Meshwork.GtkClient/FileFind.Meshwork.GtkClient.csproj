@@ -9,7 +9,6 @@
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <OutputType>WinExe</OutputType>
     <ProductVersion>9.0.30729</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <AssemblyName>FileFind.Meshwork.GtkClient</AssemblyName>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -342,10 +341,10 @@
     <VisualStudio />
     <MonoDevelop>
       <Properties>
-        <MonoDevelop.Autotools.MakefileInfo RelativeMakefileName="Makefile.am" ExecuteTargetName="run" IsAutotoolsProject="true" RelativeConfigureInPath="../..">
-          <BuildFilesVar Sync="true" Name="FILES" />
+        <MonoDevelop.Autotools.MakefileInfo RelativeMakefileName="Makefile.am" ExecuteTargetName="run" IsAutotoolsProject="True" RelativeConfigureInPath="../..">
+          <BuildFilesVar Sync="True" Name="FILES" />
           <DeployFilesVar />
-          <ResourcesVar Sync="true" Name="RESOURCES" />
+          <ResourcesVar Sync="True" Name="RESOURCES" />
           <OthersVar />
           <GacRefVar Name="REFERENCES" Prefix="-r:" />
           <AsmRefVar Name="REFERENCES" Prefix="-r:" />
